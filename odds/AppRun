@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# AppImage Root or Main-executable
-export AIR="$(dirname "$(readlink -f "${0}")")"
+# AppImage Main-executable
 export AIM="${AIM:-elinks}"
 OWD="$(pwd)"
 OLD_PATH="${PATH}"
@@ -9,15 +8,18 @@ OLD_MANPATH="${MANPATH}"
 
 # Touch config
 if [ ! -d "$HOME/.config/elinks" ]; then
-    cp -r "$AIR/etc/elinks" "$HOME/.config/elinks"
+    cp -r "${APPDIR}/etc/elinks" "$HOME/.config/elinks"
 fi
 
-# Execute something
-cd "$AIR"
-export PATH="${AIR}/usr/bin:${PATH}"
-#export TEXTDOMAINDIR="${AIR}/usr/share/locale${TEXTDOMAINDIR:+:${TEXTDOMAINDIR}}"
-#export XDG_DATA_DIRS="${AIR}/usr/share:${XDG_DATA_DIRS:-${HOME}/.local/share:/usr/local/share:/usr/share}"
-export MANPATH="${AIR}/usr/share/man${MANPATH:+:${MANPATH}}"
+# Setup env
+cd "$APPDIR"
+export PATH="${APPDIR}/usr/bin:${PATH}"
+#export TEXTDOMAINDIR="${APPDIR}/usr/share/locale${TEXTDOMAINDIR:+:${TEXTDOMAINDIR}}"
+#export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-${HOME}/.local/share:/usr/local/share:/usr/share}"
+export MANPATH="${APPDIR}/usr/share/man${MANPATH:+:${MANPATH}}"
+if [ -e ${APPDIR}/usr/bin/cha ]
+then HADCHAWAN="true"
+fi
 
 if [ "$1" == "--save-cwd" ]
 then
@@ -25,35 +27,41 @@ then
     shift
 fi
 
+# Execute something
 case $1 in
-    help)
-    echo "using: this.AppImage [ --save-cwd ] [ COMMAND ] [ ARGS ]
+    ai:help)
+    echo "using: [ AIM=COMMAND ] this.AppImage [ --save-cwd ] [ ai:COMMAND ] [ ARGS ... ]
 
-    commands:       description:
-    sh, shell       runs shell in appimage root (\$AIR)
-    qjs             runs quickjs' repl
-    help            display this help page
-    man [ PAGE ]    display manpage
+    commands:   description:
+    sh, shell   runs shell in appimage root (\$APPDIR)
+    qjs         runs quickjs' repl
+    elinks      runs elinks${HADCHAWAN:+
+    cha, chawan runs chawan}
+    help        display this help page
+    man         display \$AIM manpage
 
-    if command is not found, then runs ${AIM}
+    if command is not found, then runs \$AIM
     "
     ;;
 
-    sh|shell)
-    shift
+    ai:sh|ai:shell) shift
     ${SHELL:=bash} "$@"
     ;;
 
-    qjs)
-    shift
+    ai:qjs) shift
     qjs "$@"
     ;;
 
-    man)
-    shift
-    PAGE=${1:-$AIM}
-    shift
-    man "$@" $PAGE
+    ai:elinks) shift
+    elinks "$@"
+    ;;
+
+    ai:cha|ai:chawan) shift
+    cha "$@"
+    ;;
+
+    ai:man) shift
+    man "$@" $AIM
     ;;
 
     *) $AIM "$@" ;;
@@ -64,4 +72,4 @@ export MANPATH="${OLD_MANPATH}"
 cd "${OWD}"
 
 # Delete local variablle
-unset AIR AIM OWD OLD_PATH OLD_MANPATH
+unset AIM OWD OLD_PATH OLD_MANPATH

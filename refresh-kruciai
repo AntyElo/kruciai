@@ -14,12 +14,12 @@ meson_setup() {
     -Dc_args="-I${_SRC}/AppDir/usr/include/quickjs-ng -I${_SRC}/AppDir/usr/include -I${_SRC}/AppDir/include" \
     -Dcpp_link_args="-L${_SRC}/AppDir/usr/lib/${ARCHT} -L${_SRC}/AppDir/usr/lib -L${_SRC}/AppDir/lib" \
     -Dc_link_args="-L${_SRC}/AppDir/usr/lib/${ARCHT} -L${_SRC}/AppDir/usr/lib -L${_SRC}/AppDir/lib" \
-    --prefix=/usr \
+    --prefix=${_SRC}/AppDir/usr \
     || { ${PAGER:-pager} build/meson-logs/meson-log.txt; exit $2; }
 }
 
 cd "${_SRC}"
-echo "--- $0 ($(date))"
+echo "--- ($(date)) $0 $@"
 rm -rf AppDir
 mkdir -p repos
 ./setup-libnetsurf
@@ -36,6 +36,8 @@ if [ ! -d linuxdeploy ] ; then
     cd ..
 fi
 
+#export DESTDIR="${_SRC}/AppDir"
+
 if [ ! -d quickjs ]
 then
     git clone https://github.com/quickjs-ng/quickjs.git
@@ -51,7 +53,8 @@ rm -rf build
 meson_setup quickjs 11
 meson compile -j $((($(nproc) - 1))) -C build || exit 12
 
-DESTDIR="${_SRC}/AppDir" meson install -C build/ || exit 13
+#DESTDIR="${_SRC}/AppDir" 
+meson install -C build/ || exit 13
 
 cd ..
 
@@ -70,7 +73,8 @@ rm -rf build
 meson_setup elinks 21
 meson compile -j $((($(nproc) - 1))) -C build || exit 22
 
-DESTDIR="${_SRC}/AppDir" meson install -C build/ || exit 23
+#DESTDIR="${_SRC}/AppDir" 
+meson install -C build/ || exit 23
 
 if [ "$1" == "--with-chawan" ]
 then
