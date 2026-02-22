@@ -1,0 +1,34 @@
+#!/usr/bin/bash
+
+# So arrays in bash should work like this (?):
+array_test() { 
+    local -a NEW_ARRAY=("$@")
+    echo $NEW_ARRAY
+    echo ${NEW_ARRAY[@]}
+    for i in "${NEW_ARRAY[@]}"
+    do echo - $i
+    done
+}
+# array_test "${MY_ARRAY[*]}"
+
+git_log() { if [ -n "${GIT_LOG_SHOW}" ] ; then git log ORIG_HEAD.. | ${PAGER:-less -K}; fi; }
+
+meson_setup() {
+    # Usage: meson_setup "${BUILD}" "${ENV}" "${MESONFLAGS[@]}"
+    local ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
+    local BUILD="$1"
+    local ENV="$2"
+    shift 2
+    local -a ALL=("$@")
+    meson setup "${ALL[@]}" "$BUILD" \
+    -Dcmake_prefix_path="${ENV}/usr:${ENV}" \
+    -Dpkg_config_path="${ENV}/usr/lib/${ARCHT}/pkgconfig:${ENV}/usr/lib/pkgconfig:${ENV}/lib/pkgconfig" \
+    -Dcpp_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
+    -Dc_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
+    -Dcpp_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
+    -Dc_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
+    --prefix=${ENV}/usr \
+    || { ${TAIL:-tail -n 20} "$BUILD"/meson-logs/meson-log.txt; }
+}
+
+meson_compile() { meson compile -j $((($(nproc) - 1))) -C "$1" ; };

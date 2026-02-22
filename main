@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+# base (one shared script file) should be in "${KRUCIAI}/base", and it been
+# been sourced in "src/${package_name}.sh" files
+_OLD="$(pwd)"
+export KRUCIAI="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "${KRUCIAI}"
+echo "--- ($(date)) $0 $@"
+rm -rf AppDir
+mkdir -p orig
+mkdir -p envs
+
+if [ "$1" == "--with-chawan" ]
+then export USECHAWAN=YES
+fi
+
+pkgup() {
+    local PKG="${KRUCIAI}/src/${1:-__howto}.sh"
+    if [ ! -f "$PKG" ] ; then exit 13 ; fi # FAIL: dependency is not found
+    
+    local SRC="$(${PKG} show src)"
+    local ENV="$(${PKG} show env)"
+    if [ "$2" == SRC ] ; then echo "$SRC" ; return ; fi
+    if [ "$2" == ENV ] ; then echo "$ENV" ; return ; fi
+    echo "-- pkgup: -> $1 [$($PKG show deps)] {${SRC} -> ${ENV}}"
+
+    cd "${KRUCIAI}"
+    local UPD=0
+
+    mkdir -p "${ENV}~"
+
+    for D in $($PKG show deps)
+    do
+        pkgup "$D" && UPD=1
+        cp -r "$(pkgup "$D" ENV)/"* "${ENV}~"
+        rm "${ENV}~"/UPDATE
+    done
+
+    if   [ ! -d "$(${PKG} show src)" ]
+    then # Package is new
+        "$PKG" init
+        UPD=1
+    fi
+
+    if [ -n "$("$PKG" NOBUILD)" ]
+    then exit 0
+    fi
+
+    local V2="$("$PKG" update)"
+    test -f "${ENV}/UPDATE" && local V1="$(cat "${ENV}/UPDATE")" || local V1=""
+
+    if   [ "$UPD" == 1 -o "$V1" != "$V2" ]
+    then # Updated or is new or is not $ENV
+        rm -rf "${ENV}"
+        mv "${ENV}~" "${ENV}"
+        echo "${V2}" > "${ENV}/UPDATE"
+        "$PKG" build || ( rm -rf "${ENV}"; echo "-- pkgup/ERROR: $PKG" )
+        echo "-- pkgup: <+ $1"
+    else # Nothing happens with package(s)
+        rm -rf "${ENV}~"
+        echo "${V2}" > "${ENV}/UPDATE"
+        echo "-- pkgup: <- $1"
+        return 25
+    fi
+}
+
+pkgup dest
+echo
+
+cd "${_OLD}"
+unset KRUCIAI _OLD USECHAWAN

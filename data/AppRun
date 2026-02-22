@@ -18,7 +18,7 @@ export PATH="${APPDIR}/usr/bin:${PATH}"
 #export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-${HOME}/.local/share:/usr/local/share:/usr/share}"
 export MANPATH="${APPDIR}/usr/share/man${MANPATH:+:${MANPATH}}"
 if [ -e ${APPDIR}/usr/bin/cha ]
-then HADCHAWAN="true"
+then HAD_CHAWAN="true"
 fi
 
 if [ "$1" == "--save-cwd" ]
@@ -28,14 +28,16 @@ then
 fi
 
 # Execute something
-case $1 in
-    ai:help)
-    echo "using: [ AIM=COMMAND ] this.AppImage [ --save-cwd ] [ ai:COMMAND ] [ ARGS ... ]
+if [ "$1" -eq "--run" ] ; then
+shift
+case ${1:-$AIM} in
+    help)
+    echo "using: [ AIM=COMMAND ] $0 [ --save-cwd ] [ --run COMMAND ] [ ARGS ... ]
 
     commands:   description:
     sh, shell   runs shell in appimage root (\$APPDIR)
     qjs         runs quickjs' repl
-    elinks      runs elinks${HADCHAWAN:+
+    elinks      runs elinks${HAD_CHAWAN:+
     cha, chawan runs chawan}
     help        display this help page
     man         display \$AIM manpage
@@ -44,28 +46,31 @@ case $1 in
     "
     ;;
 
-    ai:sh|ai:shell) shift
+    sh|shell) shift
     ${SHELL:=bash} "$@"
     ;;
 
-    ai:qjs) shift
+    qjs) shift
     qjs "$@"
     ;;
 
-    ai:elinks) shift
+    elinks) shift
     elinks "$@"
     ;;
 
-    ai:cha|ai:chawan) shift
+    cha|chawan) shift
     cha "$@"
     ;;
 
-    ai:man) shift
-    man "$@" $AIM
+    man) shift
+    man "${@:AIM}"
     ;;
 
-    *) $AIM "$@" ;;
+    *) echo -e "command \"$@\" not recognized" ;;
 esac
+else
+    "${AIM}" $@
+fi
 
 export PATH="${OLD_PATH}"
 export MANPATH="${OLD_MANPATH}"

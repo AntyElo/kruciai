@@ -1,4 +1,6 @@
-repos/*
+orig/*
+envs/*
 AppDir/*
+AppDir~/*
 *.AppImage
 nohup.out
