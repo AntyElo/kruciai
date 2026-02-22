@@ -1,17 +1,30 @@
 #!/usr/bin/bash
+# source "${KRUCIAI}/base"
 SRC="${KRUCIAI}/orig/linuxdeploy"
 ENV="${KRUCIAI}/AppDir"
 DEPS=(
 	elinks
 )
 ALD_FLAGS=(
-	--appdir AppDir
-	-e AppDir/usr/bin/elinks
-	-d data/elinks.desktop
-	-i data/kruciai.png
+	--appdir "${ENV}"
+	# -l "${ENV}/usr/lib/${ARCHT}/libqjs.so.0"
+	# -l "${ENV}/lib/libparserutils.a"
+	# -l "${ENV}/lib/libwapcaplet.a"
+	# -l "${ENV}/lib/libhubbub.a"
+	# -l "${ENV}/lib/libcss.a"
+	# -l "${ENV}/lib/libdom.a"
+	-e "${ENV}/usr/bin/elinks"
+	# -e "${ENV}/usr/bin/qjs"
+	# -e "${ENV}/usr/bin/qjsc"
+	-d "${KRUCIAI}/data/elinks.desktop"
+	-i "${KRUCIAI}/data/kruciai.png"
 )
 if [ -n "$USECHAWAN" ]
-then DEPS+=('chawan')
+then 
+	DEPS+=('chawan')
+	# ALD_FLAGS+=(
+	# 	-e "${ENV}/usr/bin/cha"
+	# )
 fi
 ARCHM="${ARCHM:-$(uname -m)}"
 
@@ -39,4 +52,5 @@ show)
 	rm "$ENV/AppRun"
 	cp data/AppRun "$ENV/AppRun"
 	"${SRC}/linuxdeploy-plugin-appimage-${ARCHM}.AppImage" --appdir AppDir || exit 2
+#;; NOBUILD) echo YES
 ;; esac

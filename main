@@ -21,17 +21,24 @@ pkgup() {
     local ENV="$(${PKG} show env)"
     if [ "$2" == SRC ] ; then echo "$SRC" ; return ; fi
     if [ "$2" == ENV ] ; then echo "$ENV" ; return ; fi
-    echo "-- pkgup: -> $1 [$($PKG show deps)] {${SRC} -> ${ENV}}"
+    echo "-- pkgup: -> $1 [$($PKG show deps)]"
+    echo "-- compile ${SRC} -> ${ENV}"
 
     cd "${KRUCIAI}"
     local UPD=0
 
     mkdir -p "${ENV}~"
 
-    for D in $($PKG show deps)
+    local DEPS="$($PKG show deps)"
+    local DENV
+    for D in $DEPS
     do
+        DENV="$(pkgup "$D" ENV)"
         pkgup "$D" && UPD=1
-        cp -r "$(pkgup "$D" ENV)/"* "${ENV}~"
+        echo "-- pkgup: $1 <- $DENV"
+        if [ -n "$DENV" ]
+        then cp -r "$DENV/"* "${ENV}~"
+        fi
         rm "${ENV}~"/UPDATE
     done
 
@@ -47,13 +54,14 @@ pkgup() {
 
     local V2="$("$PKG" update)"
     test -f "${ENV}/UPDATE" && local V1="$(cat "${ENV}/UPDATE")" || local V1=""
+    # So ${ENV}/UPDATE is both marker that package localy installed and their version
 
     if   [ "$UPD" == 1 -o "$V1" != "$V2" ]
     then # Updated or is new or is not $ENV
         rm -rf "${ENV}"
         mv "${ENV}~" "${ENV}"
         echo "${V2}" > "${ENV}/UPDATE"
-        "$PKG" build || ( rm -rf "${ENV}"; echo "-- pkgup/ERROR: $PKG" )
+        "$PKG" build || ( rm "${ENV}/UPDATE"; echo "-- pkgup/ERROR: $PKG" )
         echo "-- pkgup: <+ $1"
     else # Nothing happens with package(s)
         rm -rf "${ENV}~"
@@ -64,6 +72,7 @@ pkgup() {
 }
 
 pkgup dest
+echo
 echo
 
 cd "${_OLD}"
