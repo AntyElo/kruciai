@@ -2,6 +2,8 @@
 # base (one shared script file) should be in "${KRUCIAI}/base", and it been
 # been sourced in "src/${package_name}.sh" files
 _OLD="$(pwd)"
+export ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
+export ARCHM="${ARCHM:-$(uname -m)}"
 export KRUCIAI="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${KRUCIAI}"
 echo "--- ($(date)) $0 $@"
@@ -9,14 +11,34 @@ rm -rf AppDir
 mkdir -p orig
 mkdir -p envs
 
-if [ "$1" == "--with-chawan" ]
-then export USECHAWAN=YES
-fi
+while [ -n "$1" ]
+do case "$1" in
+    --with-cha|--with-chawan)
+    export USECHAWAN=YES
+    shift;;
+
+    -v|--version)
+    echo -n "git "
+    git rev-parse HEAD
+    exit 0;;
+
+    -h|--help)
+    cat <<EOD
+usage: $0 {OPTION}
+
+OPTIONS:
+--with-cha  enables chawan support
+--help      display this page
+--version   display version
+EOD
+    exit 0;;
+esac
+done
 
 pkgup() {
     local PKG="${KRUCIAI}/src/${1:-__howto}.sh"
     if [ ! -f "$PKG" ] ; then exit 13 ; fi # FAIL: dependency is not found
-    
+
     local SRC="$(${PKG} show src)"
     local ENV="$(${PKG} show env)"
     if [ "$2" == SRC ] ; then echo "$SRC" ; return ; fi
@@ -72,8 +94,6 @@ pkgup() {
 }
 
 pkgup dest
-echo
-echo
 
 cd "${_OLD}"
-unset KRUCIAI _OLD USECHAWAN
+unset KRUCIAI _OLD USECHAWAN ARCHT ARCHM

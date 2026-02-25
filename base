@@ -15,7 +15,6 @@ git_log() { if [ -n "${GIT_LOG_SHOW}" ] ; then git log ORIG_HEAD.. | ${PAGER:-le
 
 meson_setup() {
     # Usage: meson_setup "${BUILD}" "${ENV}" "${MESONFLAGS[@]}"
-    local ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
     local BUILD="$1"
     local ENV="$2"
     shift 2

@@ -1,5 +1,4 @@
 #!/usr/bin/bash
-# source "${KRUCIAI}/base"
 SRC="${KRUCIAI}/orig/linuxdeploy"
 ENV="${KRUCIAI}/AppDir"
 DEPS=(
@@ -7,26 +6,16 @@ DEPS=(
 )
 ALD_FLAGS=(
 	--appdir "${ENV}"
-	# -l "${ENV}/usr/lib/${ARCHT}/libqjs.so.0"
-	# -l "${ENV}/lib/libparserutils.a"
-	# -l "${ENV}/lib/libwapcaplet.a"
-	# -l "${ENV}/lib/libhubbub.a"
-	# -l "${ENV}/lib/libcss.a"
-	# -l "${ENV}/lib/libdom.a"
-	-e "${ENV}/usr/bin/elinks"
-	# -e "${ENV}/usr/bin/qjs"
-	# -e "${ENV}/usr/bin/qjsc"
+	--deploy-deps-only "${ENV}/usr/bin"
 	-d "${KRUCIAI}/data/elinks.desktop"
 	-i "${KRUCIAI}/data/kruciai.png"
+	--custom-apprun "${KRUCIAI}/data/AppRun"
+	--output appimage
 )
 if [ -n "$USECHAWAN" ]
-then 
+then
 	DEPS+=('chawan')
-	# ALD_FLAGS+=(
-	# 	-e "${ENV}/usr/bin/cha"
-	# )
 fi
-ARCHM="${ARCHM:-$(uname -m)}"
 
 cd "${KRUCIAI}"
 case $1 in
@@ -37,7 +26,6 @@ show)
 	;; env)  echo "$ENV"
 	esac
 ;; init)
-	# here we shoud make $SRC
 	mkdir -p "$SRC"
 	cd "$SRC"
 	wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${ARCHM}.AppImage
@@ -48,9 +36,7 @@ show)
 	date
 ;; build)
 	cp -r data/etc "$ENV/etc"
+	export LD_LIBRARY_PATH="${ENV}/usr/lib/${ARCHT}:${ENV}/usr/lib:${ENV}/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 	"${SRC}/linuxdeploy-${ARCHM}.AppImage" "${ALD_FLAGS[@]}" || exit 1
-	rm "$ENV/AppRun"
-	cp data/AppRun "$ENV/AppRun"
-	"${SRC}/linuxdeploy-plugin-appimage-${ARCHM}.AppImage" --appdir AppDir || exit 2
 #;; NOBUILD) echo YES
 ;; esac

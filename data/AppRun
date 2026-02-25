@@ -14,7 +14,7 @@ fi
 # Setup env
 cd "$APPDIR"
 export PATH="${APPDIR}/usr/bin:${PATH}"
-#export TEXTDOMAINDIR="${APPDIR}/usr/share/locale${TEXTDOMAINDIR:+:${TEXTDOMAINDIR}}"
+export TEXTDOMAINDIR="${APPDIR}"/usr/share/locale"${TEXTDOMAINDIR:+:${TEXTDOMAINDIR}}"
 #export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-${HOME}/.local/share:/usr/local/share:/usr/share}"
 export MANPATH="${APPDIR}/usr/share/man${MANPATH:+:${MANPATH}}"
 if [ -e ${APPDIR}/usr/bin/cha ]
