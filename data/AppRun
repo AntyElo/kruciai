@@ -28,7 +28,7 @@ then
 fi
 
 # Execute something
-if [ "$1" -eq "--run" ] ; then
+if [ "$1" == "--run" ] ; then
 shift
 case ${1:-$AIM} in
     help)
