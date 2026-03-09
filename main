@@ -35,62 +35,87 @@ EOD
 esac
 done
 
+loop_break() {
+    echo "$@"
+    exit 8
+}
+
 pkgup() {
-    local PKG="${KRUCIAI}/src/${1:-__howto}.sh"
-    if [ ! -f "$PKG" ] ; then exit 13 ; fi # FAIL: dependency is not found
+    local NAME="${1:-NONAME}"
+    local HELPER="${KRUCIAI}/src/${NAME}.sh" # NAME=$1
+    if [ ! -f "$HELPER" ] ; then exit 13 ; fi # FAIL: dependency is not found
+    "${HELPER}" setup
+    test -f "${KRUCIAI}/pool/${NAME}/ENV" && \
+    source "${KRUCIAI}/pool/${NAME}/ENV" # file with environtment variables
 
-    local SRC="$(${PKG} show src)"
-    local ENV="$(${PKG} show env)"
-    if [ "$2" == SRC ] ; then echo "$SRC" ; return ; fi
-    if [ "$2" == ENV ] ; then echo "$ENV" ; return ; fi
-    echo "-- pkgup: -> $1 [$($PKG show deps)]"
-    echo "-- compile ${SRC} -> ${ENV}"
+    local SRC="${KRUCIAI}/pool/${NAME}/src"
+    local DEST="${KRUCIAI}/pool/${NAME}/AppDir"
+    local VER="${DEST}/etc/pkgup/installed/${NAME}"
+    # also changes should be in "${DEST}/etc/pkgup/changes/${NAME}"
+    local DEPS="$($HELPER deps)"
+    echo "[pkgup] enter in: $1" #[${DEPS}]
 
-    cd "${KRUCIAI}"
+    cd "${KRUCIAI}/pool/${NAME}"
     local UPD=0
 
-    mkdir -p "${ENV}~"
+    mkdir -p "${DEST}~"
 
-    local DEPS="$($PKG show deps)"
-    local DENV
+    local DD
     for D in $DEPS
     do
-        DENV="$(pkgup "$D" ENV)"
+        DD="${KRUCIAI}/pool/${D}/AppDir"
+
+        # [ ! -f "${DEST}/etc/pkgup/installed/${NAME}" ] && \
+        # ... means that you should provide order in dependencies,
+        # from specific (that has ranged. of course) to ranged.
         pkgup "$D" && UPD=1
-        echo "-- pkgup: $1 <- $DENV"
-        if [ -n "$DENV" ]
-        then cp -r "$DENV/"* "${ENV}~"
+
+        echo "[pkgup] dependency of $1: $D"
+        if [ -n "$DD" ]
+        then cp -r "$DD/"* "${DEST}~"
         fi
-        rm "${ENV}~"/UPDATE
     done
 
-    if   [ ! -d "$(${PKG} show src)" ]
+    if   [ ! -d "${SRC}" ]
     then # Package is new
-        "$PKG" init
+        mkdir -p "$SRC"
+        cd "$SRC"
+        "${HELPER}" init
         UPD=1
     fi
 
-    if [ -n "$("$PKG" NOBUILD)" ]
-    then exit 0
-    fi
+    [ "$("${HELPER}" BREAK)" == "UPDATE" ] && loop_break "[pkgup] break: UPDATE"
 
-    local V2="$("$PKG" update)"
-    test -f "${ENV}/UPDATE" && local V1="$(cat "${ENV}/UPDATE")" || local V1=""
-    # So ${ENV}/UPDATE is both marker that package localy installed and their version
+    local VER_USED
+    test -f "${VER}" && VER_USED="$(cat "${VER}")"
+    cd "${SRC}"
+    mkdir -p "${DEST}/etc/pkgup/changes"
+    local VER_NEW="$("${HELPER}" update)"
+    # So ${VER} is both marker that package localy installed and its version
 
-    if   [ "$UPD" == 1 -o "$V1" != "$V2" ]
-    then # Updated or is new or is not $ENV
-        rm -rf "${ENV}"
-        mv "${ENV}~" "${ENV}"
-        echo "${V2}" > "${ENV}/UPDATE"
-        "$PKG" build || ( rm "${ENV}/UPDATE"; echo "-- pkgup/ERROR: $PKG" )
-        echo "-- pkgup: <+ $1"
+    [ "$("${HELPER}" BREAK)" == "BUILD" ] && loop_break "[pkgup] break: BUILD"
+
+    if   [ "$UPD" == 1 -o "$VER_USED" != "$VER_NEW" ]
+    then # Updated or is new or is not $DEST
+        rm -rf "${DEST}"
+        mv "${DEST}~" "${DEST}"
+        
+        mkdir -p "${DEST}/etc/pkgup/installed"
+        echo "${VER_NEW}" > "${VER}"
+
+        "${HELPER}" build || ( rm "${VER}"; echo "`tput setaf 1`[pkgup] nobuild: ${HELPER}`tput sgr0`" )
+        echo "[pkgup] updated: $1"
+
     else # Nothing happens with package(s)
-        rm -rf "${ENV}~"
-        echo "${V2}" > "${ENV}/UPDATE"
-        echo "-- pkgup: <- $1"
+        rm -rf "${DEST}~"
+        
+        mkdir -p "${DEST}/etc/pkgup/installed"
+        echo "${VER_NEW}" > "${VER}"
+
+        echo "[pkgup] stay: $1"
         return 25
     fi
+    [ "$("${HELPER}" BREAK)" == "END" ] && loop_break "[pkgup] break: END"
 }
 
 pkgup dest

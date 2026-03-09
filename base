@@ -11,15 +11,29 @@ array_test() {
 }
 # array_test "${MY_ARRAY[*]}"
 
-git_log() { if [ -n "${GIT_LOG_SHOW}" ] ; then git log ORIG_HEAD.. | ${PAGER:-less -K}; fi; }
+update-git() {
+    git pull 1>&2
+    local CHANGES="$( git log ORIG_HEAD.. )"
+    CHANGES="${CHANGES:=nothing.
+}"
+    mkdir -p "${KRUCIAI}/pool/$1/AppDir/etc/pkgup/changes/"
+    echo "${CHANGES}" > "${KRUCIAI}/pool/$1/AppDir/etc/pkgup/changes/$1"
+    echo -n git\ 
+    git rev-parse HEAD
+}
 
-meson_setup() {
-    # Usage: meson_setup "${BUILD}" "${ENV}" "${MESONFLAGS[@]}"
-    local BUILD="$1"
-    local ENV="$2"
-    shift 2
+build-meson() {
+    # Usage: mesons "${NAME}" "${MESONFLAGS[@]}"
+    local NAME="$1"
+    local BUILD="${KRUCIAI}/pool/${NAME}/src/build"
+    local ENV="${KRUCIAI}/pool/${NAME}/AppDir"
+    shift 1
     local -a ALL=("$@")
-    meson setup "${ALL[@]}" "$BUILD" \
+
+    cd "${SRC:-${KRUCIAI}/pool/${NAME}/src}"
+    rm -rf build
+
+    meson setup "${ALL[@]}" build \
     -Dcmake_prefix_path="${ENV}/usr:${ENV}" \
     -Dpkg_config_path="${ENV}/usr/lib/${ARCHT}/pkgconfig:${ENV}/usr/lib/pkgconfig:${ENV}/lib/pkgconfig" \
     -Dcpp_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
@@ -27,7 +41,10 @@ meson_setup() {
     -Dcpp_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
     -Dc_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
     --prefix=${ENV}/usr \
-    || { ${TAIL:-tail -n 20} "$BUILD"/meson-logs/meson-log.txt; }
-}
+    || { ${TAIL:-tail -n 20} build/meson-logs/meson-log.txt; }
 
-meson_compile() { meson compile -j $((($(nproc) - 1))) -C "$1" ; };
+    local NPROC="$(nproc)"
+    meson compile -j $(((${NPROC:-2} - 1))) -C build
+
+    meson install -C build
+}

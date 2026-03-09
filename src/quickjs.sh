@@ -1,33 +1,23 @@
 #!/usr/bin/bash
 source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/orig/quickjs"
-ENV="${KRUCIAI}/envs/quickjs"
+SRC="${KRUCIAI}/pool/quickjs/src"
+ENV="${KRUCIAI}/pool/quickjs/AppDir"
 DEPS=(
 )
 MESONFLAGS=(
+	quickjs
 	-Dbuildtype\=release
 	-Ddebug\=false
 )
 
 case $1 in
-show) shift
-	case $1 in
-	   deps) echo "${DEPS[*]}"
-	;; src)  echo "$SRC"
-	;; env)  echo "$ENV"
-	esac
+deps)
+	echo "${DEPS[*]}"
 	exit
 ;; init)
-	cd orig
-	git clone https://github.com/quickjs-ng/quickjs.git
+	git clone https://github.com/quickjs-ng/quickjs.git .
 ;; update)
-	cd "$SRC"
-	git pull 1>&2
-	git rev-parse HEAD
+	update-git quickjs
 ;; build)
-	cd "$SRC"
-	rm -rf build
-	meson_setup build "${ENV}" ${MESONFLAGS[*]}
-	meson_compile build || exit 1
-	meson install -C build || exit 2
+	build-meson ${MESONFLAGS[*]}
 ;; esac

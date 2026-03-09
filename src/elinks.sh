@@ -1,12 +1,13 @@
 #!/usr/bin/bash
 source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/orig/elinks"
-ENV="${KRUCIAI}/envs/elinks"
+SRC="${KRUCIAI}/pool/elinks/src"
+ENV="${KRUCIAI}/pool/elinks/AppDir"
 DEPS=(
 	libnetsurf
 	quickjs
 )
 MESONFLAGS=(
+	elinks
 	-Dbuildtype\=release
 	-Dxterm\=x-terminal-emulator
 	-Dgnutls\=true
@@ -39,23 +40,13 @@ MESONFLAGS=(
 )
 
 case $1 in
-show)
-	case $2 in
-	   deps) echo "${DEPS[*]}"
-	;; src)  echo "$SRC"
-	;; env)  echo "$ENV"
-	esac
+deps)
+	echo "${DEPS[*]}"
+	exit
 ;; init)
-	cd orig
-	git clone https://github.com/rkd77/elinks.git
+	git clone https://github.com/rkd77/elinks.git .
 ;; update)
-	cd "$SRC"
-	git pull 1>&2
-	git rev-parse HEAD
+	update-git elinks
 ;; build)
-	cd "$SRC"
-	rm -rf build
-	meson_setup build "${ENV}" ${MESONFLAGS[*]}
-	meson_compile build || exit 1
-	meson install -C build || exit 2
+	build-meson ${MESONFLAGS[*]}
 esac

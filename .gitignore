@@ -4,3 +4,4 @@ AppDir/*
 AppDir~/*
 *.AppImage
 nohup.out
+pool/*

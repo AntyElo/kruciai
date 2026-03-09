@@ -1,27 +1,20 @@
 #!/usr/bin/bash
 source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/orig/chawan"
-ENV="${KRUCIAI}/envs/chawan"
+SRC="${KRUCIAI}/pool/chawan/src"
+ENV="${KRUCIAI}/pool/chawan/AppDir"
 DEPS=(
 )
 
 case $1 in
-show) shift
-	case $1 in
-	   deps) echo "${DEPS[*]}"
-	;; src)  echo "$SRC"
-	;; env)  echo "$ENV"
-	esac
+deps)
+	echo "${DEPS[*]}"
 	exit
 ;; init)
-	cd orig
-	git clone https://git.sr.ht/~bptato/chawan
+	git clone https://git.sr.ht/~bptato/chawan .
 ;; update)
-	cd "$SRC"
-	git pull 1>&2
-	git rev-parse HEAD
+	update-git chawan
 ;; build)
-	cd "$SRC"
+	cd "${SRC}"
 	export PREFIX=/usr
 	mkdir -p "${ENV}"
 	make || exit 1

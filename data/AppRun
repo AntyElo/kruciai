@@ -37,8 +37,9 @@ case ${1:-$AIM} in
     commands:   description:
     sh, shell   runs shell in appimage root (\$APPDIR)
     qjs         runs quickjs' repl
-    elinks      runs elinks${HAD_CHAWAN:+
-    cha, chawan runs chawan}
+    elinks      runs elinks web-browser${HAD_CHAWAN:+
+    cha, chawan runs chawan
+    mancha      runs chawan\'s wrapper for manpages}
     help        display this help page
     man         display \$AIM manpage
 
@@ -62,8 +63,17 @@ case ${1:-$AIM} in
     cha "$@"
     ;;
 
+    mancha) shift
+    mancha "$@"
+    ;;
+
     man) shift
     man "${@:AIM}"
+    ;;
+
+    changes) shift
+    cd etc/pkgup/changes/
+    for i in $(ls); do echo "--- ${i}"; cat "${i}"; done
     ;;
 
     *) echo -e "command \"$@\" not recognized" ;;

@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/orig/libnetsurf"
-ENV="${KRUCIAI}/envs/libnetsurf"
+SRC="${KRUCIAI}/pool/libnetsurf/src"
+ENV="${KRUCIAI}/pool/libnetsurf/AppDir"
 #DEPS=()
 BS=buildsystem-1.10
 SUB=(
@@ -14,17 +14,10 @@ SUB=(
 
 cd "${KRUCIAI}" # change working dir to KRUCIAI root
 case $1 in
-show) shift
-	case $1 in
-	   src)  echo "$SRC"
-	;; env)  echo "$ENV"
-	;; deps) echo "${DEPS[*]}"
-	esac
+deps)
+	echo "${DEPS[*]}"
 	exit
 ;; init)
-	# here we shoud make $SRC
-	mkdir -p "$SRC"
-	cd "$SRC"
 	wget http://download.netsurf-browser.org/libs/releases/$BS.tar.gz
 	tar -xf $BS.tar.gz
 	rm $BS.tar.gz
@@ -36,11 +29,11 @@ show) shift
 	done
 ;; update)
 	# some kind of manual update
-	echo "${SUB[@]}"
+	echo wget "${SUB[@]}"
 ;; build)
-	cd "$SRC"
+	cd "${SRC}"
 	export CFLAGS="-Wno-error" PREFIX="$ENV"
-	make -C $BS install || return 1
+	make -C $BS install || exit 1
 	for i in "${SUB[@]}"
 	do make -C $i install -j1 Q= LIBDIR=lib COMPONENT_TYPE=lib-static || exit 2
 	done
