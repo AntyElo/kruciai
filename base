@@ -1,13 +1,12 @@
 #!/usr/bin/bash
-export MSG_NOTHING="`tput setaf 7`nothing`tput sgr0`"
 
 # Samples for "update) ;;"
 update-git() {
-	git pull 1>&2
-	local CHANGES="$( git log ORIG_HEAD.. )"
-	CHANGES="${CHANGES:=${MSG_NOTHING}}"
+	local CHANGES="$( git pull 1>&2 ; git log ORIG_HEAD.. )"
 	mkdir -p "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/"
-	echo "${CHANGES}" > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
+	if [ -n "${CHANGES}" ]
+	then echo "${CHANGES}" > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
+	fi
 	echo -n "git "
 	git rev-parse HEAD
 }

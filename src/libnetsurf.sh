@@ -33,7 +33,6 @@ deps)
 ;; update)
 	# some kind of manual update
 	echo wget "${SUB[@]}"
-	echo "${MSG_NOTHING}" > "${THIS}/AppDir/etc/pkgup/changes/libnetsurf"
 ;; build)
 	export CFLAGS="-Wno-error" PREFIX="${THIS}/AppDir"
 	make -C $BS install || exit 1

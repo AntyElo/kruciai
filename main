@@ -121,6 +121,13 @@ pkgup() {
 		fi
 	fi
 
+	if [[ "$("${HELPER}" BREAK)" = *"CHANGES"* ]]
+	then "[pkgup] break: CHANGES"
+		if [ ! -f "${THIS}/AppDir/etc/pkgup/changes/${NAME}" ]
+		then echo "`tput setaf 7`nothing`tput sgr0`" > "${THIS}/AppDir/etc/pkgup/changes/${NAME}"
+		fi
+	fi
+
 	[[ "$("${HELPER}" BREAK)" = *"INTERRUPT"* ]] && exit 8
 }
 
