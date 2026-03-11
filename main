@@ -32,11 +32,6 @@ EOD
 esac
 done
 
-loop_break() {
-	echo "$@"
-	exit 8
-}
-
 pkgup() {
 	local -r NAME="${1:-NONAME}"
 	local -r HELPER="${ROOT}/src/${NAME}.sh" # NAME=$1
@@ -54,66 +49,79 @@ pkgup() {
 
 	mkdir -p "${THIS}/AppDir~"
 
-	for D in $DEPS
-	do
-		local DEP="${D}"
-		echo -n "[pkgup]  * $1: $DEP" # in [${DEPS[@]}]"
-		# [ ! -f ... ] means that you should provide order in dependencies,
-		# from specific (that has ranged, of course) to ranged.
-		if [ ! -f "${THIS}~/AppDir/etc/pkgup/installed/${DEP}" ]
-		then echo
-			pkgup "$DEP" && UPD=1
-			cp -RTf "${ROOT}/pool/${DEP}/AppDir" "${THIS}/AppDir~"
-		else echo " [already here]"
-		fi
-	done
-
-	[ "$("${HELPER}" BREAK)" == "INIT" ] && loop_break "[pkgup] break: INIT"
-
-	if   [ ! -d "${THIS}/src" ]
-	then # Package is new
-		mkdir -p "${THIS}/src"
-		cd "${THIS}/src"
-		"${HELPER}" init
-		UPD=1
+	if [[ "$("${HELPER}" BREAK)" = *"DEPS"* ]]
+	then echo "[pkgup] break: DEPS"
+	else
+		for D in $DEPS
+		do
+			local DEP="${D}" # Using new varaiable becouse without it `pkgup $D` rewrites D 
+			echo -n "[pkgup]  * $1: $DEP" # in [${DEPS[@]}]"
+			# [ ! -f ... ] means that you should provide order in dependencies,
+			# from specific (that has ranged, of course) to ranged.
+			if [ ! -f "${THIS}~/AppDir/etc/pkgup/installed/${DEP}" ]
+			then echo
+				pkgup "$DEP" && UPD=1
+				cp -RTf "${ROOT}/pool/${DEP}/AppDir" "${THIS}/AppDir~"
+			else echo " [already here]"
+			fi
+		done
 	fi
+
+	if [[ "$("${HELPER}" BREAK)" = *"INIT"* ]]
+	then echo "[pkgup] break: INIT"
+	else
+
+		if   [ ! -d "${THIS}/src" ]
+		then # Package is new
+			mkdir -p "${THIS}/src"
+			cd "${THIS}/src"
+			"${HELPER}" init
+			UPD=1
+		fi
 
 	[ ! -d "${THIS}/AppDir" ] && UPD=1 # Package is also new
-
-	[ "$("${HELPER}" BREAK)" == "UPDATE" ] && loop_break "[pkgup] break: UPDATE"
-
-	local VER_USED VER="${THIS}/AppDir/etc/pkgup/installed/${NAME}"
-	test -f "${VER}" && VER_USED="$(cat "${VER}")"
-	cd "${THIS}/src"
-	mkdir -p "${THIS}/AppDir/etc/pkgup/changes" "${THIS}/AppDir~/etc/pkgup/changes"
-	local VER_NEW="$("${HELPER}" update)"
-	# So ${VER} is both marker that package localy installed and its version
-	# also changes should be in "${THIS}/AppDir/etc/pkgup/changes/${NAME}"
-
-	[ "$("${HELPER}" BREAK)" == "BUILD" ] && loop_break "[pkgup] break: BUILD"
-
-	if   [ "$UPD" == 1 -o "$VER_USED" != "$VER_NEW" ]
-	then # Updated or is new or is not $DEST
-		rm -rf "${THIS}/AppDir"
-		mv "${THIS}/AppDir~" "${THIS}/AppDir"
-		
-		mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
-		echo "${VER_NEW}" > "${VER}"
-
-		cd "${THIS}/src"
-		"${HELPER}" build || ( rm "${VER}"; echo "`tput setaf 1`[pkgup] nobuild: ${HELPER}`tput sgr0`" )
-		echo "[pkgup] <+ $1"
-
-	else # Nothing happens with package(s)
-		rm -rf "${THIS}/AppDir~"
-
-		mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
-		echo "${VER_NEW}" > "${VER}"
-
-		echo "[pkgup] <- $1"
-		return 25
 	fi
-	[ "$("${HELPER}" BREAK)" == "END" ] && loop_break "[pkgup] break: END"
+
+	if [[ "$("${HELPER}" BREAK)" = *"UPDATE"* ]]
+	then "[pkgup] break: UPDATE"
+	else
+		# So ${VER} is both marker that package localy installed and its version
+		# also changes should be in "${THIS}/AppDir/etc/pkgup/changes/${NAME}"
+
+		local VER_USED VER="${THIS}/AppDir/etc/pkgup/installed/${NAME}"
+		test -f "${VER}" && VER_USED="$(cat "${VER}")"
+		cd "${THIS}/src"
+		mkdir -p "${THIS}/AppDir/etc/pkgup/changes" "${THIS}/AppDir~/etc/pkgup/changes"
+		local VER_NEW="$("${HELPER}" update)"
+	fi
+
+	if [[ "$("${HELPER}" BREAK)" = *"BUILD"* ]]
+	then "[pkgup] break: BUILD"
+	else
+		if   [ "$UPD" == 1 -o "$VER_USED" != "$VER_NEW" ]
+		then # Updated or is new or is not $DEST
+			rm -rf "${THIS}/AppDir"
+			mv "${THIS}/AppDir~" "${THIS}/AppDir"
+
+			mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
+			echo "${VER_NEW}" > "${VER}"
+
+			cd "${THIS}/src"
+			"${HELPER}" build || ( rm "${VER}"; echo "`tput setaf 1`[pkgup] nobuild: ${HELPER}`tput sgr0`" )
+			echo "[pkgup] <+ $1"
+
+		else # Nothing happens with package(s)
+			rm -rf "${THIS}/AppDir~"
+
+			mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
+			echo "${VER_NEW}" > "${VER}"
+
+			echo "[pkgup] <- $1"
+			return 25
+		fi
+	fi
+
+	[[ "$("${HELPER}" BREAK)" = *"INTERRUPT"* ]] && exit 8
 }
 
 echo "--- ($(date)) $0 $@"
