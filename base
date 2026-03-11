@@ -1,50 +1,41 @@
 #!/usr/bin/bash
+export MSG_NOTHING="`tput setaf 7`nothing`tput sgr0`"
 
-# So arrays in bash should work like this (?):
-array_test() { 
-    local -a NEW_ARRAY=("$@")
-    echo $NEW_ARRAY
-    echo ${NEW_ARRAY[@]}
-    for i in "${NEW_ARRAY[@]}"
-    do echo - $i
-    done
-}
-# array_test "${MY_ARRAY[*]}"
-
+# Samples for "update) ;;"
 update-git() {
-    git pull 1>&2
-    local CHANGES="$( git log ORIG_HEAD.. )"
-    CHANGES="${CHANGES:=nothing.
-}"
-    mkdir -p "${KRUCIAI}/pool/$1/AppDir/etc/pkgup/changes/"
-    echo "${CHANGES}" > "${KRUCIAI}/pool/$1/AppDir/etc/pkgup/changes/$1"
-    echo -n git\ 
-    git rev-parse HEAD
+	git pull 1>&2
+	local CHANGES="$( git log ORIG_HEAD.. )"
+	CHANGES="${CHANGES:=${MSG_NOTHING}}"
+	mkdir -p "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/"
+	echo "${CHANGES}" > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
+	echo -n "git "
+	git rev-parse HEAD
 }
 
+# Samples for "build) ;;"
 build-meson() {
-    # Usage: mesons "${NAME}" "${MESONFLAGS[@]}"
-    local NAME="$1"
-    local BUILD="${KRUCIAI}/pool/${NAME}/src/build"
-    local ENV="${KRUCIAI}/pool/${NAME}/AppDir"
-    shift 1
-    local -a ALL=("$@")
+	# Usage: mesons "${NAME}" "${MESONFLAGS[@]}"
+	local NAME="$1"
+	local BUILD="${ROOT}/pool/${NAME}/src/build"
+	local ENV="${ROOT}/pool/${NAME}/AppDir"
+	shift 1
+	local -a ALL=("$@")
 
-    cd "${SRC:-${KRUCIAI}/pool/${NAME}/src}"
-    rm -rf build
+	cd "${SRC:-${ROOT}/pool/${NAME}/src}"
+	rm -rf build
 
-    meson setup "${ALL[@]}" build \
-    -Dcmake_prefix_path="${ENV}/usr:${ENV}" \
-    -Dpkg_config_path="${ENV}/usr/lib/${ARCHT}/pkgconfig:${ENV}/usr/lib/pkgconfig:${ENV}/lib/pkgconfig" \
-    -Dcpp_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
-    -Dc_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
-    -Dcpp_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
-    -Dc_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
-    --prefix=${ENV}/usr \
-    || { ${TAIL:-tail -n 20} build/meson-logs/meson-log.txt; }
+	meson setup "${ALL[@]}" build \
+	-Dcmake_prefix_path="${ENV}/usr:${ENV}" \
+	-Dpkg_config_path="${ENV}/usr/lib/${ARCHT}/pkgconfig:${ENV}/usr/lib/pkgconfig:${ENV}/lib/pkgconfig" \
+	-Dcpp_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
+	-Dc_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
+	-Dcpp_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
+	-Dc_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
+	--prefix=${ENV}/usr \
+	|| { ${TAIL:-tail -n 20} build/meson-logs/meson-log.txt; }
 
-    local NPROC="$(nproc)"
-    meson compile -j $(((${NPROC:-2} - 1))) -C build
+	local NPROC="$(nproc)"
+	meson compile -j $(((${NPROC:-2} - 1))) -C build
 
-    meson install -C build
+	meson install -C build
 }

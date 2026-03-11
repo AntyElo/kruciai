@@ -1,7 +1,5 @@
 #!/usr/bin/bash
-source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/pool/elinks/src"
-ENV="${KRUCIAI}/pool/elinks/AppDir"
+source "${ROOT}/base"
 DEPS=(
 	libnetsurf
 	quickjs
@@ -36,7 +34,7 @@ MESONFLAGS=(
 	-Dlibavif\=true
 	-Dlibwebp\=true
 	-Dsmb\=true
-	 -Dstatic\=false
+	-Dstatic\=false # linuxdeploy do this work
 )
 
 case $1 in

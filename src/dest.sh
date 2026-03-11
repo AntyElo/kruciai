@@ -1,15 +1,14 @@
 #!/usr/bin/bash
-SRC="${KRUCIAI}/pool/dest/src"
-ENV="${KRUCIAI}/pool/dest/AppDir"
+THIS="${ROOT}/pool/dest"
 DEPS=(
 	elinks
 )
 ALD_FLAGS=(
-	--appdir "${ENV}"
-	--deploy-deps-only "${ENV}/usr/bin"
-	-d "${KRUCIAI}/data/elinks.desktop"
-	-i "${KRUCIAI}/data/kruciai.png"
-	--custom-apprun "${KRUCIAI}/data/AppRun"
+	--appdir "${THIS}/AppDir"
+	--deploy-deps-only "${THIS}/AppDir/usr/bin"
+	-d "${ROOT}/data/elinks.desktop"
+	-i "${ROOT}/data/kruciai.png"
+	--custom-apprun "${ROOT}/data/AppRun"
 	--output appimage
 )
 if [ -n "$USECHAWAN" ]
@@ -17,7 +16,6 @@ then
 	DEPS+=('chawan')
 fi
 
-cd "${KRUCIAI}"
 case $1 in
 deps)
 	echo "${DEPS[*]}"
@@ -31,11 +29,10 @@ deps)
 	echo -n linuxdeploy\ 
 	date
 ;; build)
-	cp -r "${KRUCIAI}/data/etc/*" "${ENV}/etc"
-	cd "${KRUCIAI}/pool/dest/"
-	mkdir -p AppDir/etc/pkgup/changes
-	export LD_LIBRARY_PATH="${ENV}/usr/lib/${ARCHT}:${ENV}/usr/lib:${ENV}/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-	"${SRC}/linuxdeploy-${ARCHM}.AppImage" "${ALD_FLAGS[@]}" || exit 1
-	mv *.AppImage "${KRUCIAI}"
+	mkdir -p "${THIS}/AppDir/etc"
+	cp -RT "${ROOT}/data/etc" "${THIS}/AppDir/etc"
+	export LD_LIBRARY_PATH="${THIS}/AppDir/usr/lib/${ARCHT}:${THIS}/AppDir/usr/lib:${THIS}/AppDir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+	"${THIS}/src/linuxdeploy-${ARCHM}.AppImage" "${ALD_FLAGS[@]}" || exit 1
+	mv ELinks* "${ROOT}" # I guess "ELinks" is taken from ${ROOT}/data/elinks.desktop
 #;; BREAK) echo BUILD
 ;; esac

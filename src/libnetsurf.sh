@@ -1,7 +1,6 @@
 #!/usr/bin/bash
-source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/pool/libnetsurf/src"
-ENV="${KRUCIAI}/pool/libnetsurf/AppDir"
+source "${ROOT}/base"
+THIS="${ROOT}/pool/libnetsurf/"
 #DEPS=()
 BS=buildsystem-1.10
 SUB=(
@@ -11,8 +10,12 @@ SUB=(
 	libcss-0.9.2
 	libdom-0.4.2
 )
+USEFLAGS=(
+	Q\=
+	LIBDIR\=lib
+	COMPONENT_TYPE\=lib-static
+)
 
-cd "${KRUCIAI}" # change working dir to KRUCIAI root
 case $1 in
 deps)
 	echo "${DEPS[*]}"
@@ -30,12 +33,12 @@ deps)
 ;; update)
 	# some kind of manual update
 	echo wget "${SUB[@]}"
+	echo "${MSG_NOTHING}" > "${THIS}/AppDir/etc/pkgup/changes/libnetsurf"
 ;; build)
-	cd "${SRC}"
-	export CFLAGS="-Wno-error" PREFIX="$ENV"
+	export CFLAGS="-Wno-error" PREFIX="${THIS}/AppDir"
 	make -C $BS install || exit 1
 	for i in "${SUB[@]}"
-	do make -C $i install -j1 Q= LIBDIR=lib COMPONENT_TYPE=lib-static || exit 2
+	do make -C $i install -j1 "${USEFLAGS[@]}" || exit 2
 	done
 	unset CFLAGS PREFIX
 ;; esac

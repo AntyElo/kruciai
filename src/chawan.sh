@@ -1,7 +1,6 @@
 #!/usr/bin/bash
-source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/pool/chawan/src"
-ENV="${KRUCIAI}/pool/chawan/AppDir"
+source "${ROOT}/base"
+THIS="${ROOT}/pool/chawan/"
 DEPS=(
 )
 
@@ -14,11 +13,9 @@ deps)
 ;; update)
 	update-git chawan
 ;; build)
-	cd "${SRC}"
 	export PREFIX=/usr
-	mkdir -p "${ENV}"
+	mkdir -p "${THIS}/AppDir"
 	make || exit 1
-	DESTDIR="${ENV}" make install || exit 2
+	DESTDIR="${THIS}/AppDir" make install || exit 2
 	unset PREFIX
-	#export AIM=cha
 ;; esac

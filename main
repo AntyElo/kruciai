@@ -1,29 +1,26 @@
 #!/usr/bin/bash
-# base (one shared script file) should be in "${KRUCIAI}/base", and it been
-# been sourced in "src/${package_name}.sh" files
+# base (one shared script file) should be in "${ROOT}/base", and it been
+# been sourced in "${ROOT}/src/${package_name}.sh" files
 _OLD="$(pwd)"
 export ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
 export ARCHM="${ARCHM:-$(uname -m)}"
-export KRUCIAI="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "${KRUCIAI}"
-echo "--- ($(date)) $0 $@"
-rm -rf AppDir
-mkdir -p orig
-mkdir -p envs
+export ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "${ROOT}"
+mkdir -p pool
 
 while [ -n "$1" ]
 do case "$1" in
-    --with-cha|--with-chawan)
-    export USECHAWAN=YES
-    shift;;
+	--with-cha|--with-chawan)
+	export USECHAWAN=YES
+	shift;;
 
-    -v|--version)
-    echo -n "git "
-    git rev-parse HEAD
-    exit 0;;
+	-v|--version)
+	echo -n "git "
+	git rev-parse HEAD
+	exit 0;;
 
-    -h|--help)
-    cat <<EOD
+	-h|--help)
+	cat <<EOD
 usage: $0 {OPTION}
 
 OPTIONS:
@@ -31,94 +28,96 @@ OPTIONS:
 --help      display this page
 --version   display version
 EOD
-    exit 0;;
+	exit 0;;
 esac
 done
 
 loop_break() {
-    echo "$@"
-    exit 8
+	echo "$@"
+	exit 8
 }
 
 pkgup() {
-    local NAME="${1:-NONAME}"
-    local HELPER="${KRUCIAI}/src/${NAME}.sh" # NAME=$1
-    if [ ! -f "$HELPER" ] ; then exit 13 ; fi # FAIL: dependency is not found
-    "${HELPER}" setup
-    test -f "${KRUCIAI}/pool/${NAME}/ENV" && \
-    source "${KRUCIAI}/pool/${NAME}/ENV" # file with environtment variables
+	local -r NAME="${1:-NONAME}"
+	local -r HELPER="${ROOT}/src/${NAME}.sh" # NAME=$1
+	if [ ! -f "$HELPER" ] ; then exit 13 ; fi # FAIL: dependency is not found
+	"${HELPER}" setup
+	test -f "${ROOT}/pool/${NAME}/ENV" && \
+	source "${ROOT}/pool/${NAME}/ENV" # file with environtment variables
 
-    local SRC="${KRUCIAI}/pool/${NAME}/src"
-    local DEST="${KRUCIAI}/pool/${NAME}/AppDir"
-    local VER="${DEST}/etc/pkgup/installed/${NAME}"
-    # also changes should be in "${DEST}/etc/pkgup/changes/${NAME}"
-    local DEPS="$($HELPER deps)"
-    echo "[pkgup] enter in: $1" #[${DEPS}]
+	local -r THIS="${ROOT}/pool/${NAME}"
+	local -r DEPS="$($HELPER deps)"
+	echo -e "[pkgup] -> $1${DEPS:+\n  using $DEPS}"
 
-    cd "${KRUCIAI}/pool/${NAME}"
-    local UPD=0
+	cd "${THIS}"
+	local UPD=0
 
-    mkdir -p "${DEST}~"
+	mkdir -p "${THIS}/AppDir~"
 
-    local DD
-    for D in $DEPS
-    do
-        DD="${KRUCIAI}/pool/${D}/AppDir"
+	for D in $DEPS
+	do
+		local DEP="${D}"
+		echo -n "[pkgup]  * $1: $DEP" # in [${DEPS[@]}]"
+		# [ ! -f ... ] means that you should provide order in dependencies,
+		# from specific (that has ranged, of course) to ranged.
+		if [ ! -f "${THIS}~/AppDir/etc/pkgup/installed/${DEP}" ]
+		then echo
+			pkgup "$DEP" && UPD=1
+			cp -RTf "${ROOT}/pool/${DEP}/AppDir" "${THIS}/AppDir~"
+		else echo " [already here]"
+		fi
+	done
 
-        # [ ! -f "${DEST}/etc/pkgup/installed/${NAME}" ] && \
-        # ... means that you should provide order in dependencies,
-        # from specific (that has ranged. of course) to ranged.
-        pkgup "$D" && UPD=1
+	[ "$("${HELPER}" BREAK)" == "INIT" ] && loop_break "[pkgup] break: INIT"
 
-        echo "[pkgup] dependency of $1: $D"
-        if [ -n "$DD" ]
-        then cp -r "$DD/"* "${DEST}~"
-        fi
-    done
+	if   [ ! -d "${THIS}/src" ]
+	then # Package is new
+		mkdir -p "${THIS}/src"
+		cd "${THIS}/src"
+		"${HELPER}" init
+		UPD=1
+	fi
 
-    if   [ ! -d "${SRC}" ]
-    then # Package is new
-        mkdir -p "$SRC"
-        cd "$SRC"
-        "${HELPER}" init
-        UPD=1
-    fi
+	[ ! -d "${THIS}/AppDir" ] && UPD=1 # Package is also new
 
-    [ "$("${HELPER}" BREAK)" == "UPDATE" ] && loop_break "[pkgup] break: UPDATE"
+	[ "$("${HELPER}" BREAK)" == "UPDATE" ] && loop_break "[pkgup] break: UPDATE"
 
-    local VER_USED
-    test -f "${VER}" && VER_USED="$(cat "${VER}")"
-    cd "${SRC}"
-    mkdir -p "${DEST}/etc/pkgup/changes"
-    local VER_NEW="$("${HELPER}" update)"
-    # So ${VER} is both marker that package localy installed and its version
+	local VER_USED VER="${THIS}/AppDir/etc/pkgup/installed/${NAME}"
+	test -f "${VER}" && VER_USED="$(cat "${VER}")"
+	cd "${THIS}/src"
+	mkdir -p "${THIS}/AppDir/etc/pkgup/changes" "${THIS}/AppDir~/etc/pkgup/changes"
+	local VER_NEW="$("${HELPER}" update)"
+	# So ${VER} is both marker that package localy installed and its version
+	# also changes should be in "${THIS}/AppDir/etc/pkgup/changes/${NAME}"
 
-    [ "$("${HELPER}" BREAK)" == "BUILD" ] && loop_break "[pkgup] break: BUILD"
+	[ "$("${HELPER}" BREAK)" == "BUILD" ] && loop_break "[pkgup] break: BUILD"
 
-    if   [ "$UPD" == 1 -o "$VER_USED" != "$VER_NEW" ]
-    then # Updated or is new or is not $DEST
-        rm -rf "${DEST}"
-        mv "${DEST}~" "${DEST}"
-        
-        mkdir -p "${DEST}/etc/pkgup/installed"
-        echo "${VER_NEW}" > "${VER}"
+	if   [ "$UPD" == 1 -o "$VER_USED" != "$VER_NEW" ]
+	then # Updated or is new or is not $DEST
+		rm -rf "${THIS}/AppDir"
+		mv "${THIS}/AppDir~" "${THIS}/AppDir"
+		
+		mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
+		echo "${VER_NEW}" > "${VER}"
 
-        "${HELPER}" build || ( rm "${VER}"; echo "`tput setaf 1`[pkgup] nobuild: ${HELPER}`tput sgr0`" )
-        echo "[pkgup] updated: $1"
+		cd "${THIS}/src"
+		"${HELPER}" build || ( rm "${VER}"; echo "`tput setaf 1`[pkgup] nobuild: ${HELPER}`tput sgr0`" )
+		echo "[pkgup] <+ $1"
 
-    else # Nothing happens with package(s)
-        rm -rf "${DEST}~"
-        
-        mkdir -p "${DEST}/etc/pkgup/installed"
-        echo "${VER_NEW}" > "${VER}"
+	else # Nothing happens with package(s)
+		rm -rf "${THIS}/AppDir~"
 
-        echo "[pkgup] stay: $1"
-        return 25
-    fi
-    [ "$("${HELPER}" BREAK)" == "END" ] && loop_break "[pkgup] break: END"
+		mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
+		echo "${VER_NEW}" > "${VER}"
+
+		echo "[pkgup] <- $1"
+		return 25
+	fi
+	[ "$("${HELPER}" BREAK)" == "END" ] && loop_break "[pkgup] break: END"
 }
 
+echo "--- ($(date)) $0 $@"
 pkgup dest
 
 cd "${_OLD}"
-unset KRUCIAI _OLD USECHAWAN ARCHT ARCHM
+unset ROOT _OLD USECHAWAN ARCHT ARCHM

@@ -1,7 +1,5 @@
 #!/usr/bin/bash
-source "${KRUCIAI}/base"
-SRC="${KRUCIAI}/pool/quickjs/src"
-ENV="${KRUCIAI}/pool/quickjs/AppDir"
+source "${ROOT}/base"
 DEPS=(
 )
 MESONFLAGS=(

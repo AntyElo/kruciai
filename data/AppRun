@@ -8,7 +8,7 @@ OLD_MANPATH="${MANPATH}"
 
 # Touch config
 if [ ! -d "$HOME/.config/elinks" ]; then
-    cp -r "${APPDIR}/etc/elinks" "$HOME/.config/elinks"
+	cp -r "${APPDIR}/etc/elinks" "$HOME/.config/elinks"
 fi
 
 # Setup env
@@ -17,69 +17,75 @@ export PATH="${APPDIR}/usr/bin:${PATH}"
 export TEXTDOMAINDIR="${APPDIR}"/usr/share/locale"${TEXTDOMAINDIR:+:${TEXTDOMAINDIR}}"
 #export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-${HOME}/.local/share:/usr/local/share:/usr/share}"
 export MANPATH="${APPDIR}/usr/share/man${MANPATH:+:${MANPATH}}"
-if [ -e ${APPDIR}/usr/bin/cha ]
+if [ -e ${APPDIR}/etc/pkgup/installed/chawan ]
 then HAD_CHAWAN="true"
 fi
 
 if [ "$1" == "--save-cwd" ]
 then
-    cd "OWD"
-    shift
+	cd "OWD"
+	shift
 fi
 
 # Execute something
 if [ "$1" == "--run" ] ; then
 shift
 case ${1:-$AIM} in
-    help)
-    echo "using: [ AIM=COMMAND ] $0 [ --save-cwd ] [ --run COMMAND ] [ ARGS ... ]
+	h|help)
+	echo -e "using: [ AIM=COMMAND ] $0 [ --save-cwd ] [ --run COMMAND ] [ ARGS ... ]
 
-    commands:   description:
-    sh, shell   runs shell in appimage root (\$APPDIR)
-    qjs         runs quickjs' repl
-    elinks      runs elinks web-browser${HAD_CHAWAN:+
-    cha, chawan runs chawan
-    mancha      runs chawan\'s wrapper for manpages}
-    help        display this help page
-    man         display \$AIM manpage
+commands:       description:
 
-    if command is not found, then runs \$AIM
-    "
-    ;;
+sh, shell       runs shell in appimage root (\$APPDIR)
+man             display \$AIM manpage
+help            display this help page
+changes         list recent changes of programs
+installed       list installed programs
 
-    sh|shell) shift
-    ${SHELL:=bash} "$@"
-    ;;
+qjs             runs quickjs' repl
+elinks          runs elinks web-browser${HAD_CHAWAN:+
+cha, chawan     runs chawan
+mancha          runs chawan\'s wrapper for manpages}
+";;
 
-    qjs) shift
-    qjs "$@"
-    ;;
+	sh|shell) shift
+	${SHELL:=bash} "$@"
+	;;
 
-    elinks) shift
-    elinks "$@"
-    ;;
+	qjs) shift
+	qjs "$@"
+	;;
 
-    cha|chawan) shift
-    cha "$@"
-    ;;
+	elinks) shift
+	elinks "$@"
+	;;
 
-    mancha) shift
-    mancha "$@"
-    ;;
+	cha|chawan) shift
+	cha "$@"
+	;;
 
-    man) shift
-    man "${@:AIM}"
-    ;;
+	mancha) shift
+	mancha "$@"
+	;;
 
-    changes) shift
-    cd etc/pkgup/changes/
-    for i in $(ls); do echo "--- ${i}"; cat "${i}"; done
-    ;;
+	man) shift
+	man "${@:AIM}"
+	;;
 
-    *) echo -e "command \"$@\" not recognized" ;;
+	c|changes) shift
+	cd etc/pkgup/changes/
+	for i in $(ls); do echo "--- ${i}"; cat "${i}"; done
+	;;
+
+	i|installed) shift
+	cd etc/pkgup/installed/
+	for i in $(ls); do echo "--- ${i}"; cat "${i}"; done
+	;;
+
+	*) echo -e "command \"$@\" not recognized" ;;
 esac
 else
-    "${AIM}" $@
+	"${AIM}" $@
 fi
 
 export PATH="${OLD_PATH}"
