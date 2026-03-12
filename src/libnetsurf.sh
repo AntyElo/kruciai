@@ -32,7 +32,7 @@ deps)
 	done
 ;; update)
 	# some kind of manual update
-	echo wget "${SUB[@]}"
+	echo wget "${BS}" "${SUB[@]}"
 ;; build)
 	export CFLAGS="-Wno-error" PREFIX="${THIS}/AppDir"
 	make -C $BS install || exit 1

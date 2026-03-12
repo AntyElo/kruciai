@@ -42,7 +42,6 @@ pkgup() {
 
 	local -r THIS="${ROOT}/pool/${NAME}"
 	local -r DEPS="$($HELPER deps)"
-	echo -e "[pkgup] -> $1${DEPS:+\n  using $DEPS}"
 
 	cd "${THIS}"
 	local UPD=0
@@ -66,6 +65,8 @@ pkgup() {
 			fi
 		done
 	fi
+
+	echo -e "[pkgup] -> $1${DEPS:+\n  using $DEPS}"
 
 	if [[ "$("${HELPER}" BREAK)" = *"INIT"* ]]
 	then echo "[pkgup] break: INIT"
