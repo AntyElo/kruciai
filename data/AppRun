@@ -32,7 +32,7 @@ if [ "$1" == "--run" ] ; then
 shift
 case ${1:-$AIM} in
 	h|help)
-	echo -e "using: [ AIM=COMMAND ] $0 [ --save-cwd ] [ --run COMMAND ] [ ARGS ... ]
+	echo "using: [ AIM=COMMAND ] $0 [ --save-cwd ] [ --run COMMAND ] [ ARGS ... ]
 
 commands:       description:
 
@@ -42,10 +42,10 @@ help            display this help page
 changes         list recent changes of programs
 installed       list installed programs
 
-qjs             runs quickjs' repl
+qjs             runs quickjs\' repl
 elinks          runs elinks web-browser${HAD_CHAWAN:+
 cha, chawan     runs chawan
-mancha          runs chawan\'s wrapper for manpages}
+mancha          runs chawan\'s wrapper for manpages}\
 ";;
 
 	sh|shell) shift

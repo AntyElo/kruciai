@@ -26,7 +26,16 @@ deps)
 	chmod +x linuxdeploy-${ARCHM}.AppImage
 	chmod +x linuxdeploy-plugin-appimage-${ARCHM}.AppImage
 ;; update)
-	echo -n linuxdeploy\ 
+	cd ${ROOT}
+	CHANGES="$( git log ORIG_HEAD.. )"
+	mkdir -p "${ROOT}/pool/dest/AppDir/etc/pkgup/changes/"
+	if [ -n "${CHANGES}" ]
+	then echo "${CHANGES}" > "${ROOT}/pool/dest/AppDir/etc/pkgup/changes/dest"
+	fi
+	unset CHANGES
+	echo -n "git "
+	git rev-parse HEAD
+	echo -n " at "
 	date
 ;; build)
 	mkdir -p "${THIS}/AppDir/etc"

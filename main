@@ -53,20 +53,22 @@ pkgup() {
 	else
 		for D in $DEPS
 		do
-			local DEP="${D}" # Using new varaiable becouse without it `pkgup $D` rewrites D 
+			local DEP="${D}" # Using new varaiable becouse without it `pkgup $D` rewrites D
 			echo -n "[pkgup]  * $1: $DEP" # in [${DEPS[@]}]"
 			# [ ! -f ... ] means that you should provide order in dependencies,
 			# from specific (that has ranged, of course) to ranged.
 			if [ ! -f "${THIS}~/AppDir/etc/pkgup/installed/${DEP}" ]
 			then echo
 				pkgup "$DEP" && UPD=1
+				if [ ! -f "${ROOT}/pool/${DEP}/AppDir/etc/pkgup/installed/${DEP}" ]
+				then echo "[pkgup] <! ${NAME}: ${DEP}"
+					return 17
+				fi
 				cp -RTf "${ROOT}/pool/${DEP}/AppDir" "${THIS}/AppDir~"
 			else echo " [already here]"
 			fi
 		done
 	fi
-
-	echo -e "[pkgup] -> $1${DEPS:+\n  using $DEPS}"
 
 	if [[ "$("${HELPER}" BREAK)" = *"INIT"* ]]
 	then echo "[pkgup] break: INIT"
@@ -132,6 +134,13 @@ pkgup() {
 	[[ "$("${HELPER}" BREAK)" = *"INTERRUPT"* ]] && exit 8
 }
 
+for i in git make gperf meson cmake pkg-config
+do
+	if [ -z "$(which $i)" ]
+	then echo "ERORR: lack of dependency: $i"
+		exit 66
+	fi
+done
 echo "--- ($(date)) $0 $@"
 pkgup dest
 
