@@ -134,7 +134,7 @@ pkgup() {
 	[[ "$("${HELPER}" BREAK)" = *"INTERRUPT"* ]] && exit 8
 }
 
-for i in git make gperf meson cmake pkg-config
+for i in tput wget git make gperf cmake pkg-config ninja meson
 do
 	if [ -z "$(which $i)" ]
 	then echo "ERORR: lack of dependency: $i"
