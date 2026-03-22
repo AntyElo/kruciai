@@ -11,8 +11,13 @@ if [ ! -d "$HOME/.config/elinks" ]; then
 	cp -r "${APPDIR}/etc/elinks" "$HOME/.config/elinks"
 fi
 
-# Setup env
-cd "$APPDIR"
+if [ "$1" == "--in-appdir" ]
+then
+	cd "${APPDIR}"
+	shift
+fi
+
+# Setup env\
 export PATH="${APPDIR}/usr/bin:${PATH}"
 export TEXTDOMAINDIR="${APPDIR}"/usr/share/locale"${TEXTDOMAINDIR:+:${TEXTDOMAINDIR}}"
 #export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-${HOME}/.local/share:/usr/local/share:/usr/share}"
@@ -21,18 +26,14 @@ if [ -e ${APPDIR}/etc/pkgup/installed/chawan ]
 then HAD_CHAWAN="true"
 fi
 
-if [ "$1" == "--save-cwd" ]
-then
-	cd "OWD"
-	shift
-fi
 
 # Execute something
 if [ "$1" == "--run" ] ; then
 shift
 case ${1:-$AIM} in
 	h|help)
-	echo "using: [ AIM=COMMAND ] $0 [ --save-cwd ] [ --run COMMAND ] [ ARGS ... ]
+	Q="'"
+	echo "using: [ AIM=COMMAND ] $0 [ --in-appdir ] [ --run COMMAND ] [ ARGS ... ]
 
 commands:       description:
 
@@ -42,11 +43,11 @@ help            display this help page
 changes         list recent changes of programs
 installed       list installed programs
 
-qjs             runs quickjs\' repl
+qjs             runs quickjs$Q repl
 elinks          runs elinks web-browser${HAD_CHAWAN:+
 cha, chawan     runs chawan
-mancha          runs chawan\'s wrapper for manpages}\
-";;
+mancha          runs chawan$Qs wrapper for manpages}\
+"; unset Q;;
 
 	sh|shell) shift
 	${SHELL:=bash} "$@"

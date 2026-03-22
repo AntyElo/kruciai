@@ -27,6 +27,7 @@ deps)
 	chmod +x linuxdeploy-plugin-appimage-${ARCHM}.AppImage
 ;; update)
 	cd ${ROOT}
+	update-hook0 "dest"
 	CHANGES="$( git log ORIG_HEAD.. )"
 	mkdir -p "${ROOT}/pool/dest/AppDir/etc/pkgup/changes/"
 	if [ -n "${CHANGES}" ]

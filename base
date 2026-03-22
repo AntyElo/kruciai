@@ -1,12 +1,26 @@
 #!/usr/bin/bash
 
 # Samples for "update) ;;"
-update-git() {
-	local CHANGES="$( git pull 1>&2 ; git log ORIG_HEAD.. )"
+update-hook0() {
 	mkdir -p "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/"
+	if [ ! -f "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1" ]
+	then echo `tput setaf 7`"Nothing"`tput sgr0` > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
+	fi
+}
+
+update-git() {
+	update-hook0 "$1"
+	local CHANGES="$( git pull 1>&2 ; git log ORIG_HEAD.. 2>&1 )"
 	if [ -n "${CHANGES}" ]
 	then echo "${CHANGES}" > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
 	fi
+	echo -n "git "
+	git rev-parse HEAD
+}
+
+update-git-src() {
+	# Use $2 (e.g. CHANGELOG) as source of changes
+	cat "${ROOT}/pool/$1/src/$2" > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
 	echo -n "git "
 	git rev-parse HEAD
 }

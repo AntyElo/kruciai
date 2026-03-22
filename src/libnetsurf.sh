@@ -32,6 +32,7 @@ deps)
 	done
 ;; update)
 	# some kind of manual update
+	update-hook0 "libnetsurf"
 	echo wget "${BS}" "${SUB[@]}"
 ;; build)
 	export CFLAGS="-Wno-error" PREFIX="${THIS}/AppDir"
