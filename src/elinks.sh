@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 source "${ROOT}/base"
 DEPS=(
 	libnetsurf

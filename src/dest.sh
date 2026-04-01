@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 THIS="${ROOT}/pool/dest"
 DEPS=(
 	elinks

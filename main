@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # base (one shared script file) should be in "${ROOT}/base", and it been
 # been sourced in "${ROOT}/src/${package_name}.sh" files
 _OLD="$(pwd)"
