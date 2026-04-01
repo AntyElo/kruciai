@@ -43,6 +43,7 @@ pkgup() {
 	local -r THIS="${ROOT}/pool/${NAME}"
 	local -r DEPS="$($HELPER deps)"
 
+	mkdir -p "${THIS}"
 	cd "${THIS}"
 	local UPD=0
 
