@@ -29,7 +29,6 @@ update-git-src() {
 build-meson() {
 	# Usage: mesons "${NAME}" "${MESONFLAGS[@]}"
 	local NAME="$1"
-	local BUILD="${ROOT}/pool/${NAME}/src/build"
 	local ENV="${ROOT}/pool/${NAME}/AppDir"
 	shift 1
 	local -a ALL=("$@")
