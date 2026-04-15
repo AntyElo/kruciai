@@ -28,22 +28,22 @@ update-git-src() {
 # Samples for "build) ;;"
 build-meson() {
 	# Usage: mesons "${NAME}" "${MESONFLAGS[@]}"
+	echo "[base] do build-meson [$0]" "$@"
 	local NAME="$1"
-	local ENV="${ROOT}/pool/${NAME}/AppDir"
 	shift 1
-	local -a ALL=("$@")
 
 	cd "${SRC:-${ROOT}/pool/${NAME}/src}"
+	local ENV="$(pwd)/../AppDir"
 	rm -rf build
 
-	meson setup "${ALL[@]}" build \
+	meson setup "$@" build \
 	-Dcmake_prefix_path="${ENV}/usr:${ENV}" \
 	-Dpkg_config_path="${ENV}/usr/lib/${ARCHT}/pkgconfig:${ENV}/usr/lib/pkgconfig:${ENV}/lib/pkgconfig" \
 	-Dcpp_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
 	-Dc_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
 	-Dcpp_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
 	-Dc_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
-	--prefix=${ENV}/usr \
+	--prefix="${ENV}/usr" \
 	|| { ${TAIL:-tail -n 20} build/meson-logs/meson-log.txt; }
 
 	local NPROC="$(nproc)"
