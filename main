@@ -104,6 +104,7 @@ pkgup() {
 	else
 		if   [ "$UPD" == 1 -o "$VER_USED" != "$VER_NEW" ]
 		then # Updated or is new or is not $DEST
+			mv "${THIS}/AppDir/etc/pkgup/changes" "${THIS}/AppDir~/etc/pkgup/changes"
 			rm -rf "${THIS}/AppDir"
 			mv "${THIS}/AppDir~" "${THIS}/AppDir"
 
