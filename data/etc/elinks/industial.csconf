@@ -1,4 +1,4 @@
-# The Industial colorscheme ####################################################
+# Industial
 
 set ui.colors.color.desktop.text = "#101010"
 set ui.colors.color.desktop.background = "#202020"

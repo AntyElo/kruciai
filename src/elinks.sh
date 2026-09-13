@@ -7,6 +7,7 @@ DEPS=(
 MESONFLAGS=(
 	elinks
 	-Dbuildtype\=release
+	-Dapidoc\=false
 	-Dxterm\=x-terminal-emulator
 	-Dgnutls\=true
 	-Dterminfo\=true
@@ -33,6 +34,7 @@ MESONFLAGS=(
 	-Dpython\=true
 	-Dlibavif\=true
 	-Dlibwebp\=true
+	-Dlibrsvg\=true
 	-Dsmb\=true
 	-Dstatic\=false # linuxdeploy do this work
 )

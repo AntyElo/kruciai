@@ -1,4 +1,4 @@
-# The White Birch colorscheme ##################################################
+# White Birch
 
 set ui.colors.color.desktop.text = "#f0f0f0"
 set ui.colors.color.desktop.background = "#e0e0e0"
