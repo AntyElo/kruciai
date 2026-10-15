@@ -59,7 +59,7 @@ MESONFLAGS=(
 helper() {
 	case "$1" in
 	init)
-		git clone "https://github.com/rkd77/elinks.git" .
+		"$ROOT/base" cg "https://github.com/rkd77/elinks.git" .
 	;; update)
 		"$ROOT/base" ug elinks
 		exit $?

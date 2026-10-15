@@ -15,7 +15,7 @@ update-git() {
 	>>"$ROOT/log/1" echo "[base] update-git $*"
 	local uri="$(git remote get-url "$(git config --get branch.$(git branch --show-current).remote)")" || return 1
 	echo "git $(git rev-parse HEAD) [${uri}]"
-	update-hook0 "$1" "$( git pull 1>&2 ; git log ORIG_HEAD.. 2>&1 )"
+	update-hook0 "$1" "$( 1>>"$ROOT/log/1" 2>>"$ROOT/log/2" git pull ; git log ORIG_HEAD.. 2>&1 )"
 }
 
 update-git-src() {
@@ -24,6 +24,12 @@ update-git-src() {
 	echo "git $(git rev-parse HEAD) [${uri}]"
 	# Use $2 (e.g. CHANGELOG) as source of changes
 	cat "$ROOT/pool/$1/src/$2" > "$ROOT/pool/$1/AppDir/etc/pkgup/changes/$1"
+}
+
+clone-git() {
+	>>"$ROOT/log/1" echo "[base] clone-git $*"
+	1>>"$ROOT/log/1" 2>>"$ROOT/log/2" git clone "$@"
+	return $?
 }
 
 # Samples for "build) ;;"
@@ -58,7 +64,7 @@ build-meson() {
 }
 
 why-no-build-meson() {
-	pager "$ROOT/pool/$1/src/build/meson-logs/meson-log.txt"
+	less "$ROOT/pool/$1/src/build/meson-logs/meson-log.txt"
 }
 
 # proxy
@@ -66,6 +72,7 @@ _C="$1"
 shift
 case "${_C}" in
     uh0|update-hook0)       update-hook0 "$@"
+;;   cg|clone-git)          clone-git "$@"
 ;;   ug|update-git)         update-git "$@"
 ;;  ugs|update-git-source)  update-git-source "$@"
 ;;   bm|build-meson)        build-meson "$@" ; exit $?

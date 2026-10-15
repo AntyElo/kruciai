@@ -12,7 +12,7 @@ LIBDEPS=(
 helper() {
 	case "$1" in
 	init)
-		git clone "https://git.sr.ht/~bptato/chawan" .
+		"$ROOT/base" cg "https://git.sr.ht/~bptato/chawan" .
 	;; update)
 		"$ROOT/base" ug chawan
 		exit $?

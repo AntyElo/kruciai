@@ -151,7 +151,7 @@ echo "$DATE"
 >> "$ROOT/log/2" echo "$DATE"
 unset DATE
 
-which
+which >/dev/null 2>/dev/null
 if [ "$?" != '1' ]
 then
 	echo "[pkgup] b! which"

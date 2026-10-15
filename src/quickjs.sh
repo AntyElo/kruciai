@@ -19,7 +19,7 @@ MESONFLAGS=(
 helper() {
 	case "$1" in
 	init)
-		git clone "https://github.com/quickjs-ng/quickjs.git" .
+		"$ROOT/base" cg "https://github.com/quickjs-ng/quickjs.git" .
 	;; update)
 		"$ROOT/base" ug quickjs
 		exit $?
