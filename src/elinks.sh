@@ -1,8 +1,27 @@
 #!/usr/bin/env bash
-source "${ROOT}/base"
 DEPS=(
 	libnetsurf
 	quickjs
+)
+SYSDEPS=(
+	git
+	meson
+	ninja
+	cmake
+	pkg-config
+)
+LIBDEPS=(
+	tre
+	expat
+	gnutls
+	libbrotlidec
+	zlib
+	liblzma
+	libevent
+	libavif
+	libwebp
+	librsvg-2.0
+	libsixel
 )
 MESONFLAGS=(
 	elinks
@@ -30,23 +49,25 @@ MESONFLAGS=(
 	-Dcgi\=true
 	-Dfinger\=true
 	-Dfsp\=true
-	-Dlibwebp\=true
-	-Dpython\=true
+	# -Dluapkg\=...
 	-Dlibavif\=true
 	-Dlibwebp\=true
 	-Dlibrsvg\=true
 	-Dsmb\=true
 	-Dstatic\=false # linuxdeploy do this work
 )
-
-case $1 in
-deps)
-	echo "${DEPS[*]}"
-	exit
-;; init)
-	git clone https://github.com/rkd77/elinks.git .
-;; update)
-	update-git elinks
-;; build)
-	build-meson ${MESONFLAGS[*]}
-esac
+helper() {
+	case "$1" in
+	init)
+		git clone "https://github.com/rkd77/elinks.git" .
+	;; update)
+		"$ROOT/base" ug elinks
+		exit $?
+	;; build)
+		"$ROOT/base" bm "${MESONFLAGS[@]}"
+		exit $?
+	;; why-no-build)
+		"$ROOT/base" wnbm "${MESONFLAGS[0]}"
+	esac
+}
+helper "$@"

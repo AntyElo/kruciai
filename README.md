@@ -13,3 +13,7 @@ For more information run `./$APPIMAGENAME --run h`
 
 ### Credits
 Icon is created by 0x32f83b.
+
+### Debug
+
+You can interspect it by `bash -x ./main 2> log/main`

@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
-source "${ROOT}/base"
-THIS="${ROOT}/pool/chawan/"
+THIS="$ROOT/pool/chawan/"
 DEPS=(
 )
+SYSDEPS=(
+	git
+	make
+)
+LIBDEPS=(
+)
 
-case $1 in
-deps)
-	echo "${DEPS[*]}"
-	exit
-;; init)
-	git clone https://git.sr.ht/~bptato/chawan .
-;; update)
-	update-git chawan
-;; build)
-	export PREFIX=/usr
-	mkdir -p "${THIS}/AppDir"
-	make || exit 1
-	DESTDIR="${THIS}/AppDir" make install || exit 2
-	unset PREFIX
-;; esac
+helper() {
+	case "$1" in
+	init)
+		git clone "https://git.sr.ht/~bptato/chawan" .
+	;; update)
+		"$ROOT/base" ug chawan
+		exit $?
+	;; build)
+		export PREFIX=/usr
+		mkdir -p "$THIS/AppDir"
+		cd "$THIS/src" || exit 1
+		make || exit 2
+		DESTDIR="$THIS/AppDir" make install || exit 3
+		unset PREFIX
+	;; esac
+}
+helper "$@"

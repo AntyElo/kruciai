@@ -1,47 +1,63 @@
 #!/usr/bin/env bash
 
-# AppImage Main-executable
-export AIM="${AIM:-elinks}"
-OWD="$(pwd)"
-OLD_PATH="${PATH}"
-OLD_MANPATH="${MANPATH}"
-
-# Touch config
-if [ ! -d "$HOME/.config/elinks" ]; then
-	cp -r "${APPDIR}/etc/elinks" "$HOME/.config/elinks"
+if [ -f "$APPDIR/etc/pkgup/features" ]
+then . "$APPDIR/etc/pkgup/features"
 fi
 
-if [ "$1" == "--in-appdir" ]
-then
-	cd "${APPDIR}"
-	shift
-fi
+# Setup env
+_PATH="$PATH"
+export PATH="$APPDIR/usr/bin:${_PATH}"
 
-# Setup env\
-export PATH="${APPDIR}/usr/bin:${PATH}"
-export TEXTDOMAINDIR="${APPDIR}"/usr/share/locale"${TEXTDOMAINDIR:+:${TEXTDOMAINDIR}}"
-#export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-${HOME}/.local/share:/usr/local/share:/usr/share}"
-export MANPATH="${APPDIR}/usr/share/man${MANPATH:+:${MANPATH}}"
-if [ -e ${APPDIR}/etc/pkgup/installed/chawan ]
+_MANPATH="${MANPATH:-/usr/share/man}"
+export MANPATH="$APPDIR/usr/share/man:${_MANPATH}"
+
+_TEXTDOMAINDIR="$TEXTDOMAINDIR"
+export TEXTDOMAINDIR="$APPDIR"/usr/share/locale"${TEXTDOMAINDIR:+:$TEXTDOMAINDIR}"
+
+#export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-$HOME/.local/share:/usr/local/share:/usr/share}"
+if [ -e $APPDIR/etc/pkgup/installed/chawan ]
 then HAD_CHAWAN="true"
 fi
 
+_NOTHING="$(tput setaf 7)Nothing$(tput sgr0)"
 
-# Execute something
-if [ "$1" == "--run" ] ; then
-shift
-case ${1:-$AIM} in
-	h|help)
+display_file() {
+	if [ -s "$1" ]
+	then printf "─── %s\n" "$1"
+		cat "$1"
+	else printf "─── %s\n%s\n" "$1" "${_NOTHING}"
+	fi
+}
+
+display_files() {
+	local _PWD="$(pwd)"
+	cd "$1"
+	shift 1
+	if [ -n "$*" ]
+	then
+		for i in "$@"
+		do display_file "$i"
+		done
+	else
+		for i in *
+		do display_file "$i"
+		done
+	fi
+	cd "${_PWD}"
+}
+
+case "$1" in
+	''|h|-h|help|--help)
 	Q="'"
-	echo "using: [ AIM=COMMAND ] $0 [ --in-appdir ] [ --run COMMAND ] [ ARGS ... ]
+	echo "using: $(basename $0) COMMAND [ ARGS ... ]
 
 commands:       description:
 
-sh, shell       runs shell in appimage root (\$APPDIR)
-man             display \$AIM manpage
+sh, shell       runs shell. To change dir to appimage root type \`cd \$APPDIR\`
+man             display manpage (wrapper around man${HAD_CHAWAN:+cha})
 help            display this help page
-changes         list recent changes of programs
-installed       list installed programs
+log             list recent changes of programs
+list            list installed programs
 
 qjs             runs quickjs$Q repl
 elinks          runs elinks web-browser${HAD_CHAWAN:+
@@ -54,44 +70,38 @@ mancha          runs chawan$Qs wrapper for manpages}\
 	;;
 
 	qjs) shift
-	qjs "$@"
+	"$APPDIR/usr/bin/qjs" "$@"
 	;;
 
-	elinks) shift
-	elinks "$@"
+	web|elinks) shift
+	if [ ! -d "$HOME/.config/elinks" ]; then
+		cp -r "$APPDIR/etc/elinks" "$HOME/.config/elinks"
+	fi
+	"$APPDIR/usr/bin/elinks" "$@"
 	;;
 
 	cha|chawan) shift
-	cha "$@"
-	;;
-
-	mancha) shift
-	mancha "$@"
+	"$APPDIR/usr/bin/cha" "$@"
 	;;
 
 	man) shift
-	man "${@:AIM}"
+	if [ -n "$HAD_CHAWAN" ]
+	then "$APPDIR/usr/bin/mancha" "$@"
+	else man "$@"
+	fi
 	;;
 
-	c|changes) shift
-	cd etc/pkgup/changes/
-	for i in $(ls); do echo "--- ${i}"; cat "${i}"; done
+	c|changes|log) shift
+	display_files "$APPDIR/etc/pkgup/changes" "$@" | less -FRP "Changes"
 	;;
 
-	i|installed) shift
-	cd etc/pkgup/installed/
-	for i in $(ls); do echo "--- ${i}"; cat "${i}"; done
+	i|installed|list) shift
+	display_files "$APPDIR/etc/pkgup/installed" "$@" | less -FRP "Installed"
 	;;
 
-	*) echo -e "command \"$@\" not recognized" ;;
+	*) echo "command \"$*\" not recognized" ;;
 esac
-else
-	"${AIM}" $@
-fi
 
-export PATH="${OLD_PATH}"
-export MANPATH="${OLD_MANPATH}"
-cd "${OWD}"
-
-# Delete local variablle
-unset AIM OWD OLD_PATH OLD_MANPATH
+export PATH="${_PATH}"
+export MANPATH="${_MANPATH}"
+export TEXTDOMAINDIR="${_TEXTDOMAINDIR}"

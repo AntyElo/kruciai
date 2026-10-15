@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
-source "${ROOT}/base"
 DEPS=(
+)
+SYSDEPS=(
+	git
+	meson
+	ninja
+	cmake
+	pkg-config
+)
+LIBDEPS=(
 )
 MESONFLAGS=(
 	quickjs
@@ -8,14 +16,16 @@ MESONFLAGS=(
 	-Ddebug\=false
 )
 
-case $1 in
-deps)
-	echo "${DEPS[*]}"
-	exit
-;; init)
-	git clone https://github.com/quickjs-ng/quickjs.git .
-;; update)
-	update-git quickjs
-;; build)
-	build-meson ${MESONFLAGS[*]}
-;; esac
+helper() {
+	case "$1" in
+	init)
+		git clone "https://github.com/quickjs-ng/quickjs.git" .
+	;; update)
+		"$ROOT/base" ug quickjs
+		exit $?
+	;; build)
+		"$ROOT/base" bm "${MESONFLAGS[@]}"
+		exit $?
+	;; esac
+}
+helper "$@"

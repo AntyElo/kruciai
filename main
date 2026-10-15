@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # base (one shared script file) should be in "${ROOT}/base", and it been
 # been sourced in "${ROOT}/src/${package_name}.sh" files
-_OLD="$(pwd)"
-export ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
-export ARCHM="${ARCHM:-$(uname -m)}"
-export ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "${ROOT}"
+_PWD="$(pwd)"
+ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
+ARCHM="${ARCHM:-$(uname -m)}"
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export ARCHT ARCHM ROOT
+RED="$(tput setaf 1)"
+NORMAL="$(tput sgr0)"
+declare -r RED NORMAL
+cd "$ROOT" || exit
 mkdir -p pool
 
 while [ -n "$1" ]
@@ -32,119 +36,132 @@ EOD
 esac
 done
 
-pkgup() {
-	local -r NAME="${1:-NONAME}"
-	local -r HELPER="${ROOT}/src/${NAME}.sh" # NAME=$1
-	if [ ! -f "$HELPER" ] ; then exit 13 ; fi # FAIL: dependency is not found
-	"${HELPER}" setup
-	test -f "${ROOT}/pool/${NAME}/ENV" && \
-	source "${ROOT}/pool/${NAME}/ENV" # file with environtment variables
-
-	local -r THIS="${ROOT}/pool/${NAME}"
-	local -r DEPS="$($HELPER deps)"
-
-	mkdir -p "${THIS}"
-	cd "${THIS}"
-	local UPD=0
-
-	mkdir -p "${THIS}/AppDir~"
-
-	if [[ "$("${HELPER}" BREAK)" = *"DEPS"* ]]
-	then echo "[pkgup] break: DEPS"
-	else
-		for D in $DEPS
-		do
-			local DEP="${D}" # Using new varaiable becouse without it `pkgup $D` rewrites D
-			echo -n "[pkgup]  * $1: $DEP" # in [${DEPS[@]}]"
-			# [ ! -f ... ] means that you should provide order in dependencies,
-			# from specific (that has ranged, of course) to ranged.
-			if [ ! -f "${THIS}~/AppDir/etc/pkgup/installed/${DEP}" ]
-			then echo
-				pkgup "$DEP" && UPD=1
-				if [ ! -f "${ROOT}/pool/${DEP}/AppDir/etc/pkgup/installed/${DEP}" ]
-				then echo "[pkgup] <! ${NAME}: ${DEP}"
-					return 17
-				fi
-				cp -RTf "${ROOT}/pool/${DEP}/AppDir" "${THIS}/AppDir~"
-			else echo " [already here]"
-			fi
-		done
-	fi
-
-	if [[ "$("${HELPER}" BREAK)" = *"INIT"* ]]
-	then echo "[pkgup] break: INIT"
-	else
-
-		if   [ ! -d "${THIS}/src" ]
-		then # Package is new
-			mkdir -p "${THIS}/src"
-			cd "${THIS}/src"
-			"${HELPER}" init
-			UPD=1
+pkgsub() {
+	# usage: pkgsub NAME DEP
+	test -n "$2" || return 7
+	local NOUPD=1
+	printf "[pkgup]  * %s: %s" "$1" "$2" # in [${DEPS[@]}]"
+	# [ ! -f ... ] means that you should provide order in dependencies,
+	# from specific (that has ranged, of course) to ranged.
+	if [ ! -f "$ROOT/pool/$1/AppDir~/etc/pkgup/installed/$2" ]
+	then echo
+		pkgup "$2" && NOUPD=0
+		# echo "[pkgup]  ? $2 $?"
+		if [ ! -f "$ROOT/pool/$2/AppDir/etc/pkgup/installed/$2" ]
+		then echo "[pkgup] <! $1 [ghost dependency: $2]"
+			# NOUPD=1
+			return 17
 		fi
-
-	[ ! -d "${THIS}/AppDir" ] && UPD=1 # Package is also new
+		cp -RTf "$ROOT/pool/$2/AppDir" "$ROOT/pool/$1/AppDir~"
+	else echo " [already here]"
 	fi
-
-	if [[ "$("${HELPER}" BREAK)" = *"UPDATE"* ]]
-	then "[pkgup] break: UPDATE"
-	else
-		# So ${VER} is both marker that package localy installed and its version
-		# also changes should be in "${THIS}/AppDir/etc/pkgup/changes/${NAME}"
-
-		local VER_USED VER="${THIS}/AppDir/etc/pkgup/installed/${NAME}"
-		test -f "${VER}" && VER_USED="$(cat "${VER}")"
-		cd "${THIS}/src"
-		mkdir -p "${THIS}/AppDir/etc/pkgup/changes" "${THIS}/AppDir~/etc/pkgup/changes"
-		local VER_NEW="$("${HELPER}" update)"
-	fi
-
-	if [[ "$("${HELPER}" BREAK)" = *"BUILD"* ]]
-	then "[pkgup] break: BUILD"
-	else
-		if   [ "$UPD" == 1 -o "$VER_USED" != "$VER_NEW" ]
-		then # Updated or is new or is not $DEST
-			mv "${THIS}/AppDir/etc/pkgup/changes" "${THIS}/AppDir~/etc/pkgup/changes"
-			rm -rf "${THIS}/AppDir"
-			mv "${THIS}/AppDir~" "${THIS}/AppDir"
-
-			mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
-			echo "${VER_NEW}" > "${VER}"
-
-			cd "${THIS}/src"
-			"${HELPER}" build || ( rm "${VER}"; echo "`tput setaf 1`[pkgup] nobuild: ${HELPER}`tput sgr0`" )
-			echo "[pkgup] <+ $1"
-
-		else # Nothing happens with package(s)
-			rm -rf "${THIS}/AppDir~"
-
-			mkdir -p "${THIS}/AppDir/etc/pkgup/installed"
-			echo "${VER_NEW}" > "${VER}"
-
-			echo "[pkgup] <- $1"
-			return 25
-		fi
-	fi
-
-	if [[ "$("${HELPER}" BREAK)" = *"CHANGES"* ]]
-	then "[pkgup] break: CHANGES"
-		if [ ! -f "${THIS}/AppDir/etc/pkgup/changes/${NAME}" ]
-		then echo "`tput setaf 7`nothing`tput sgr0`" > "${THIS}/AppDir/etc/pkgup/changes/${NAME}"
-		fi
-	fi
-
-	[[ "$("${HELPER}" BREAK)" = *"INTERRUPT"* ]] && exit 8
+	return $NOUPD
 }
 
-for i in tput wget git make gperf cmake pkg-config ninja meson perl
-do
-	if [ -z "$(which $i)" ]
-	then echo "ERORR: lack of dependency: $i"
-		exit 66
+pkgup() {
+	local -r NAME="${1:-NONAME}"
+	local -r HELPER="$ROOT/src/$NAME.sh" # NAME=$1
+	#local -r THIS="$ROOT/pool/$NAME"
+	test ! -f "$HELPER" && exit 13 # FAIL: dependency is not found
+	# shellcheck source=/dev/null
+	source "$HELPER" # Is a script from #src/
+	"$HELPER" setup
+	echo "[pkgup] -> $NAME [ ${SYSDEPS[*]} | ${LIBDEPS[*]} | ${DEPS[*]} ]"
+	for i in $SYSDEPS
+	do
+		if [ -n "$i" ] && [ -z "$(which "$i")" ]
+		then echo "${RED}[pkgup] <! $NAME$NORMAL [nobin: $i]"
+			return 67
+		fi
+	done
+
+	for i in "${LIBDEPS[@]}"
+	do
+		[ -z "$i" ] \
+		|| pkg-config "$i" \
+		|| pkgconf "$i" \
+		|| (echo "${RED}[pkgup] <! $NAME$NORMAL [nolib: $i]" ; false) \
+		|| return 68
+	done
+
+	mkdir -p "$ROOT/pool/$NAME"
+	cd "$ROOT/pool/$NAME" || return 1
+	local UPD=0
+
+	if   [ ! -d "$ROOT/pool/$NAME/src" ]
+	then # Package is new
+		mkdir -p "$ROOT/pool/$NAME/src"
+		cd "$ROOT/pool/$NAME/src" || return 5
+		"$HELPER" init
+		UPD=1
 	fi
-done
-echo "--- ($(date)) $0 $@"
+
+	[ ! -d "$ROOT/pool/$NAME/AppDir" ] && UPD=1 # Package is also new
+
+	# So $VER_FILE is both marker that package localy installed and its version
+	# also changes should be in "$ROOT/pool/$NAME/AppDir/etc/pkgup/changes/$NAME"
+
+	local VER_FILE VER_USED VER_NEW
+	mkdir -p "$ROOT/pool/$NAME"/AppDir{,'~'}/etc/pkgup/{installed,changes}
+	VER_FILE="$ROOT/pool/$NAME/AppDir/etc/pkgup/installed/$NAME"
+	touch "$VER_FILE"
+	VER_USED="$(cat "$VER_FILE")"
+	cd "$ROOT/pool/$NAME/src" || return 2
+	VER_NEW="$("$HELPER" update)"
+
+	for DEP in "${DEPS[@]}"
+	do pkgsub "$NAME" "$DEP" && UPD=1
+	done
+
+	if   [ "$UPD" == 1 ] || [ "$VER_USED" != "$VER_NEW" ]
+	then # Updated or is new or is not $DEST
+		echo "[pkgup] ^^ $NAME \"$VER_NEW\""
+		cd "$ROOT/pool/$NAME/AppDir/etc/pkgup/changes/"  || return 3
+		if [ -n "$(ls)" ]
+		then for i in *
+			do cat "$i" >> "$ROOT/pool/$NAME/AppDir~/etc/pkgup/changes/$i"
+			done
+		fi
+		rm -rf "$ROOT/pool/$NAME/AppDir"
+		mv -T "$ROOT/pool/$NAME/AppDir~" "$ROOT/pool/$NAME/AppDir"
+
+		mkdir -p "$ROOT/pool/$NAME/AppDir/etc/pkgup/installed"
+		echo "$VER_NEW" > "$VER_FILE"
+
+		cd "$ROOT/pool/$NAME/src" || return 4
+		"$HELPER" build || ( rm "$VER_FILE"; echo "${RED}[pkgup] <! $NAME$NORMAL [nobuild]" ; false) \
+		|| ("$HELPER" why-no-build ; false) || exit 17
+		echo "[pkgup] <+ $NAME"
+
+	else # Nothing happens with package(s)
+		rm -rf "$ROOT/pool/$NAME/AppDir~"
+
+		mkdir -p "$ROOT/pool/$NAME/AppDir/etc/pkgup/installed"
+		echo "$VER_NEW" > "$VER_FILE"
+
+		echo "[pkgup] <- $NAME"
+		return 25
+	fi
+}
+
+mkdir -p "$ROOT/log"
+DATE="--- ($(date "+%Y%m%dT%H%M%S")) $0 $*"
+echo "$DATE"
+>> "$ROOT/log/1" echo "$DATE"
+>> "$ROOT/log/2" echo "$DATE"
+unset DATE
+
+which
+if [ "$?" != '1' ]
+then
+	echo "[pkgup] b! which"
+	exit 66
+fi
+
 pkgup dest
 
-cd "${_OLD}"
-unset ROOT _OLD USECHAWAN ARCHT ARCHM
+>> "$ROOT/log/1" echo
+>> "$ROOT/log/2" echo
+
+cd "$_PWD" || exit 8
+unset ROOT _PWD USECHAWAN ARCHT ARCHM

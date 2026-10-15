@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
-source "${ROOT}/base"
 THIS="${ROOT}/pool/libnetsurf/"
-#DEPS=()
+DEPS=(
+)
+SYSDEPS=(
+	wget
+	make
+	perl
+)
+LIBDEPS=(
+)
 BS=buildsystem-1.10
 SUB=(
 	libparserutils-0.2.5
@@ -16,30 +23,29 @@ USEFLAGS=(
 	COMPONENT_TYPE\=lib-static
 )
 
-case $1 in
-deps)
-	echo "${DEPS[*]}"
-	exit
-;; init)
-	wget http://download.netsurf-browser.org/libs/releases/$BS.tar.gz
-	tar -xf $BS.tar.gz
-	rm $BS.tar.gz
-	for i in "${SUB[@]}"
-	do 
-		wget http://download.netsurf-browser.org/libs/releases/$i-src.tar.gz
-		tar -xf $i-src.tar.gz
-		rm $i-src.tar.gz
-	done
-;; update)
-	# some kind of manual update
-	update-hook0 "libnetsurf"
-	echo wget "${BS}" "${SUB[@]}"
-;; build)
-	export CFLAGS="-Wno-error" PREFIX="${THIS}/AppDir"
-	make -C $BS install || exit 1
-	for i in "${SUB[@]}"
-	do make -C $i install -j1 "${USEFLAGS[@]}" || exit 2
-	done
-	unset CFLAGS PREFIX
-;; esac
-
+helper() {
+	case "$1" in
+	init)
+		wget "http://download.netsurf-browser.org/libs/releases/$BS.tar.gz"
+		tar -xf "$BS.tar.gz"
+		rm "$BS.tar.gz"
+		for i in "${SUB[@]}"
+		do 
+			wget "http://download.netsurf-browser.org/libs/releases/$i-src.tar.gz"
+			tar -xf "$i-src.tar.gz"
+			rm "$i-src.tar.gz"
+		done
+	;; update)
+		# some kind of manual update
+		"$ROOT/base" uh0 "libnetsurf"
+		echo wget "${BS}" "${SUB[@]}"
+	;; build)
+		export CFLAGS="-Wno-error" PREFIX="${THIS}/AppDir"
+		make -C $BS install || exit 1
+		for i in "${SUB[@]}"
+		do make -C $i install -j1 "${USEFLAGS[@]}" || exit 2
+		done
+		unset CFLAGS PREFIX
+	;; esac
+}
+helper "$@"

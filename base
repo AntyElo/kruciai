@@ -1,53 +1,74 @@
 #!/usr/bin/env bash
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Samples for "update) ;;"
 update-hook0() {
-	mkdir -p "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/"
-	if [ ! -f "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1" ]
-	then echo `tput setaf 7`"Nothing"`tput sgr0` > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
+	>>"$ROOT/log/1" echo "[base] update-hook0 $*"
+	mkdir -p "$ROOT/pool/$1/AppDir/etc/pkgup/changes/"
+	if [ ! -f "$ROOT/pool/$1/AppDir/etc/pkgup/changes/$1" ]
+	then printf '' > "$ROOT/pool/$1/AppDir/etc/pkgup/changes/$1"
 	fi
+	test -n "$2" && printf -- "%s" "$2" > "$ROOT/pool/$1/AppDir/etc/pkgup/changes/$1"
 }
 
 update-git() {
-	update-hook0 "$1"
-	local CHANGES="$( git pull 1>&2 ; git log ORIG_HEAD.. 2>&1 )"
-	if [ -n "${CHANGES}" ]
-	then echo "${CHANGES}" > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
-	fi
-	echo -n "git "
-	git rev-parse HEAD
+	>>"$ROOT/log/1" echo "[base] update-git $*"
+	local uri="$(git remote get-url "$(git config --get branch.$(git branch --show-current).remote)")" || return 1
+	echo "git $(git rev-parse HEAD) [${uri}]"
+	update-hook0 "$1" "$( git pull 1>&2 ; git log ORIG_HEAD.. 2>&1 )"
 }
 
 update-git-src() {
+	>>"$ROOT/log/1" echo "[base] update-git-src $*"
+	local uri="$(git remote get-url "$(git config --get branch.$(git branch --show-current).remote)")" || return 1
+	echo "git $(git rev-parse HEAD) [${uri}]"
 	# Use $2 (e.g. CHANGELOG) as source of changes
-	cat "${ROOT}/pool/$1/src/$2" > "${ROOT}/pool/$1/AppDir/etc/pkgup/changes/$1"
-	echo -n "git "
-	git rev-parse HEAD
+	cat "$ROOT/pool/$1/src/$2" > "$ROOT/pool/$1/AppDir/etc/pkgup/changes/$1"
 }
 
 # Samples for "build) ;;"
 build-meson() {
 	# Usage: mesons "${NAME}" "${MESONFLAGS[@]}"
-	echo "[base] do build-meson [$0]" "$@"
-	local NAME="$1"
+	>>"$ROOT/log/1" echo "[base] build-meson $*"
+	local NAME
+	NAME="$1"
 	shift 1
 
-	cd "${SRC:-${ROOT}/pool/${NAME}/src}"
-	local ENV="$(pwd)/../AppDir"
+	cd "${SRC:-$ROOT/pool/$NAME/src}" || return 1
+	local ENV
+	ENV="$(pwd)/../AppDir"
 	rm -rf build
 
+	1>>"$ROOT/log/1" 2>>"$ROOT/log/2"\
 	meson setup "$@" build \
-	-Dcmake_prefix_path="${ENV}/usr:${ENV}" \
-	-Dpkg_config_path="${ENV}/usr/lib/${ARCHT}/pkgconfig:${ENV}/usr/lib/pkgconfig:${ENV}/lib/pkgconfig" \
-	-Dcpp_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
-	-Dc_args="-I${ENV}/usr/include/quickjs-ng -I${ENV}/usr/include -I${ENV}/include" \
-	-Dcpp_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
-	-Dc_link_args="-L${ENV}/usr/lib/${ARCHT} -L${ENV}/usr/lib -L${ENV}/lib" \
-	--prefix="${ENV}/usr" \
-	|| { ${TAIL:-tail -n 20} build/meson-logs/meson-log.txt; }
+	-Dcmake_prefix_path="$ENV/usr:$ENV" \
+	-Dpkg_config_path="$ENV/usr/lib/${ARCHT}/pkgconfig:$ENV/usr/lib/pkgconfig:$ENV/lib/pkgconfig" \
+	-Dcpp_args="-I$ENV/usr/include/quickjs-ng -I$ENV/usr/include -I$ENV/include" \
+	-Dc_args="-I$ENV/usr/include/quickjs-ng -I$ENV/usr/include -I$ENV/include" \
+	-Dcpp_link_args="-L$ENV/usr/lib/${ARCHT} -L$ENV/usr/lib -L$ENV/lib" \
+	-Dc_link_args="-L$ENV/usr/lib/${ARCHT} -L$ENV/usr/lib -L$ENV/lib" \
+	--prefix="$ENV/usr" \
+	|| return 2
 
-	local NPROC="$(nproc)"
-	meson compile -j $(((${NPROC:-2} - 1))) -C build
+	1>>"$ROOT/log/1" 2>>"$ROOT/log/2"\
+	meson compile -j $(($(nproc || printf '%d' 2) - 1)) -C build || return 3
 
-	meson install -C build
+	1>>"$ROOT/log/1" 2>>"$ROOT/log/2"\
+	meson install -C build || return 4
 }
+
+why-no-build-meson() {
+	pager "$ROOT/pool/$1/src/build/meson-logs/meson-log.txt"
+}
+
+# proxy
+_C="$1"
+shift
+case "${_C}" in
+    uh0|update-hook0)       update-hook0 "$@"
+;;   ug|update-git)         update-git "$@"
+;;  ugs|update-git-source)  update-git-source "$@"
+;;   bm|build-meson)        build-meson "$@" ; exit $?
+;; wnbm|why-no-build-meson) why-no-build-meson "$@"
+;; esac
+unset _C ROOT

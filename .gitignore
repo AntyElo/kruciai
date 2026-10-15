@@ -1,3 +1,4 @@
 *.AppImage
 nohup.out
 pool/*
+log/*

@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.1
+Icon=kruciai
+Name=kruciai
+Comment=The kruciai environtment
+Type=Application
+Exec=kruciai help
+Categories=ConsoleOnly;Network;WebBrowser;
+StartupNotify=false
+NoDisplay=false
+Terminal=true
+
+[Desktop Action browse]
+Exec=kruciai web %U
+Name=New Window
+
+[Desktop Action browse private]
+Exec=kruciai web -anonymous 1 %U
+Name=New Private Window
