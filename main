@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# base (one shared script file) should be in "${ROOT}/base", and it been
-# been sourced in "${ROOT}/src/${package_name}.sh" files
+# base (one shared script file) should be in "$ROOT/base", and it been
+# been sourced in "$ROOT/src/${package_name}.sh" files
 _PWD="$(pwd)"
 ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
 ARCHM="${ARCHM:-$(uname -m)}"
@@ -50,7 +50,7 @@ pkgsub() {
 		if [ ! -f "$ROOT/pool/$2/AppDir/etc/pkgup/installed/$2" ]
 		then echo "[pkgup] <! $1 [ghost dependency: $2]"
 			# NOUPD=1
-			return 17
+			exit 18
 		fi
 		cp -RTf "$ROOT/pool/$2/AppDir" "$ROOT/pool/$1/AppDir~"
 	else echo " [already here]"
@@ -71,7 +71,7 @@ pkgup() {
 	do
 		if [ -n "$i" ] && [ -z "$(which "$i")" ]
 		then echo "${RED}[pkgup] <! $NAME$NORMAL [nobin: $i]"
-			return 67
+			exit 67
 		fi
 	done
 
@@ -81,7 +81,7 @@ pkgup() {
 		|| pkg-config "$i" \
 		|| pkgconf "$i" \
 		|| (echo "${RED}[pkgup] <! $NAME$NORMAL [nolib: $i]" ; false) \
-		|| return 68
+		|| exit 68
 	done
 
 	mkdir -p "$ROOT/pool/$NAME"

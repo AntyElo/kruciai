@@ -13,8 +13,8 @@ SYSDEPS=(
 LIBDEPS=(
 	tre
 	expat
-	gnutls
-	libbrotlidec
+	openssl
+	libbrotlidec #brotli
 	zlib
 	liblzma
 	libevent
@@ -22,13 +22,14 @@ LIBDEPS=(
 	libwebp
 	librsvg-2.0
 	libsixel
+	libcurl
 )
 MESONFLAGS=(
 	elinks
 	-Dbuildtype\=release
 	-Dapidoc\=false
 	-Dxterm\=x-terminal-emulator
-	-Dgnutls\=true
+	-Dopenssl\=true
 	-Dterminfo\=true
 	-Dbrotli\=true
 	-Dlzma\=true
@@ -56,6 +57,13 @@ MESONFLAGS=(
 	-Dsmb\=true
 	-Dstatic\=false # linuxdeploy do this work
 )
+
+# GPM have not .pc file
+if echo '#include <gpm.h>' | cc -x c - -lgpm -o /dev/null 2>/dev/null
+then MESONFLAGS+="-Dgpm=true"
+else MESONFLAGS+="-Dgpm=false"
+fi
+
 helper() {
 	case "$1" in
 	init)

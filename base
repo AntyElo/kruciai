@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+--log() { >>"$ROOT/log/1" echo "[base]" "$@" ; }
 
 # Samples for "update) ;;"
 update-hook0() {
-	>>"$ROOT/log/1" echo "[base] update-hook0 $*"
+	--log update-hook0 "$*"
 	mkdir -p "$ROOT/pool/$1/AppDir/etc/pkgup/changes/"
 	if [ ! -f "$ROOT/pool/$1/AppDir/etc/pkgup/changes/$1" ]
 	then printf '' > "$ROOT/pool/$1/AppDir/etc/pkgup/changes/$1"
@@ -12,14 +13,14 @@ update-hook0() {
 }
 
 update-git() {
-	>>"$ROOT/log/1" echo "[base] update-git $*"
+	--log update-git "$*"
 	local uri="$(git remote get-url "$(git config --get branch.$(git branch --show-current).remote)")" || return 1
 	echo "git $(git rev-parse HEAD) [${uri}]"
 	update-hook0 "$1" "$( 1>>"$ROOT/log/1" 2>>"$ROOT/log/2" git pull ; git log ORIG_HEAD.. 2>&1 )"
 }
 
 update-git-src() {
-	>>"$ROOT/log/1" echo "[base] update-git-src $*"
+	--log update-git-src "$*"
 	local uri="$(git remote get-url "$(git config --get branch.$(git branch --show-current).remote)")" || return 1
 	echo "git $(git rev-parse HEAD) [${uri}]"
 	# Use $2 (e.g. CHANGELOG) as source of changes
@@ -27,15 +28,15 @@ update-git-src() {
 }
 
 clone-git() {
-	>>"$ROOT/log/1" echo "[base] clone-git $*"
+	--log clone-git "$*"
 	1>>"$ROOT/log/1" 2>>"$ROOT/log/2" git clone "$@"
 	return $?
 }
 
 # Samples for "build) ;;"
 build-meson() {
-	# Usage: mesons "${NAME}" "${MESONFLAGS[@]}"
-	>>"$ROOT/log/1" echo "[base] build-meson $*"
+	# Usage: build-meson "$NAME" "${MESONFLAGS[@]}"
+	--log build-meson "$*"
 	local NAME
 	NAME="$1"
 	shift 1
@@ -64,6 +65,7 @@ build-meson() {
 }
 
 why-no-build-meson() {
+	--log why-no-build-meson "$*"
 	less "$ROOT/pool/$1/src/build/meson-logs/meson-log.txt"
 }
 
