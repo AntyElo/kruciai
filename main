@@ -6,11 +6,28 @@ ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
 ARCHM="${ARCHM:-$(uname -m)}"
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export ARCHT ARCHM ROOT
+cd "$ROOT" || exit
+mkdir -p pool
+
+which >/dev/null 2>/dev/null
+if [ "$?" != '1' ]
+then
+	printf "[pkgup] b! which\n"
+	exit 66
+fi
+
+for i in echo tput pkg-config cc
+do
+	if [ -n "$i" ] && [ -z "$(which "$i")" ]
+	then
+		printf "[pkgup] b! %s\n" "$i"
+		exit 66
+	fi
+done
+
 RED="$(tput setaf 1)"
 NORMAL="$(tput sgr0)"
 declare -r RED NORMAL
-cd "$ROOT" || exit
-mkdir -p pool
 
 while [ -n "$1" ]
 do case "$1" in
@@ -154,13 +171,6 @@ echo "$DATE"
 >> "$ROOT/log/1" echo "$DATE"
 >> "$ROOT/log/2" echo "$DATE"
 unset DATE
-
-which >/dev/null 2>/dev/null
-if [ "$?" != '1' ]
-then
-	echo "[pkgup] b! which"
-	exit 66
-fi
 
 pkgup dest
 

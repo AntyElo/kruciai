@@ -9,11 +9,12 @@ Categories=ConsoleOnly;Network;WebBrowser;
 StartupNotify=false
 NoDisplay=false
 Terminal=true
+Actions=Browse;BrowsePrivate;
 
-[Desktop Action browse]
+[Desktop Action Browse]
 Exec=kruciai web %U
 Name=New Window
 
-[Desktop Action browse private]
+[Desktop Action BrowsePrivate]
 Exec=kruciai web -anonymous 1 %U
 Name=New Private Window

@@ -6,8 +6,6 @@ DEPS=(
 SYSDEPS=(
 	git
 	wget
-	tput
-	echo
 )
 LIBDEPS=(
 )

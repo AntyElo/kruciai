@@ -22,5 +22,7 @@ init)
 ;; update)
 	"$ROOT/base" ug quickjs
 ;; build)
-	"$ROOT/base" bm quickjs
+	"$ROOT/base" bm "${MESONFLAGS[@]}"
+;; why-no-build)
+	"$ROOT/base" wnbm quickjs
 ;; esac
