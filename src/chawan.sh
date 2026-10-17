@@ -5,8 +5,14 @@ DEPS=(
 SYSDEPS=(
 	git
 	make
+	nim
 )
 LIBDEPS=(
+	libbrotlicommon
+	libbrotlidec
+	libcrypto
+	libssl
+	libssh2
 )
 
 case "$1" in

@@ -14,6 +14,7 @@ LIBDEPS=(
 	tre
 	expat
 	openssl
+	libbrotlicommon #brotli
 	libbrotlidec #brotli
 	zlib
 	liblzma
