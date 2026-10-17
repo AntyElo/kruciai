@@ -129,8 +129,12 @@ pkgup() {
 		echo "$VER_NEW" > "$VER_FILE"
 
 		cd "$ROOT/pool/$NAME/src" || return 4
-		"$HELPER" build || ( rm "$VER_FILE"; echo "${RED}[pkgup] <! $NAME$NORMAL [nobuild]" ; false) \
-		|| ("$HELPER" why-no-build ; false) || exit 17
+		"$HELPER" build || (
+			rm "$VER_FILE"
+			echo "${RED}[pkgup] <! $NAME$NORMAL [nobuild]"
+			"$HELPER" why-no-build
+			false
+		) || exit 17
 		echo "[pkgup] <+ $NAME"
 
 	else # Nothing happens with package(s)
