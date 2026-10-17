@@ -36,6 +36,7 @@ init)
 ;; update)
 	cd "$ROOT" || exit 2
 	"$ROOT/base" uh0 "dest" "$( git log ORIG_HEAD.. )"
+	git -C "$ROOT" rev-parse HEAD > "$ROOT/.git/ORIG_HEAD"
 	printf "dest %s (git %s)" "$(date "+%Y%m%dT%H%M%S")" "$(git rev-parse HEAD)"
 ;; build)
 	mkdir -p "$THIS/AppDir/etc"
