@@ -60,22 +60,23 @@ MESONFLAGS=(
 
 # GPM have not .pc file
 if echo '#include <gpm.h>' | cc -x c - -lgpm -o /dev/null 2>/dev/null
-then MESONFLAGS+="-Dgpm=true"
-else MESONFLAGS+="-Dgpm=false"
+then MESONFLAGS+=("-Dgpm=true")
+else MESONFLAGS+=("-Dgpm=false")
 fi
 
-helper() {
-	case "$1" in
-	init)
-		"$ROOT/base" cg "https://github.com/rkd77/elinks.git" .
-	;; update)
-		"$ROOT/base" ug elinks
-		exit $?
-	;; build)
-		"$ROOT/base" bm "${MESONFLAGS[@]}"
-		exit $?
-	;; why-no-build)
-		"$ROOT/base" wnbm "${MESONFLAGS[0]}"
-	esac
-}
-helper "$@"
+# execinfo have not .pc file
+if echo '#include <execinfo.h>' | cc -x c - -lexecinfo -o /dev/null 2>/dev/null
+then MESONFLAGS+=("-Dbacktrace=true")
+else MESONFLAGS+=("-Dbacktrace=false")
+fi
+
+case "$1" in
+init)
+	"$ROOT/base" cg "https://github.com/rkd77/elinks.git" .
+;; update)
+	"$ROOT/base" ug elinks
+;; build)
+	"$ROOT/base" bm "${MESONFLAGS[@]}"
+;; why-no-build)
+	"$ROOT/base" wnbm elinks
+esac

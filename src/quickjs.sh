@@ -16,16 +16,11 @@ MESONFLAGS=(
 	-Ddebug\=false
 )
 
-helper() {
-	case "$1" in
-	init)
-		"$ROOT/base" cg "https://github.com/quickjs-ng/quickjs.git" .
-	;; update)
-		"$ROOT/base" ug quickjs
-		exit $?
-	;; build)
-		"$ROOT/base" bm "${MESONFLAGS[@]}"
-		exit $?
-	;; esac
-}
-helper "$@"
+case "$1" in
+init)
+	"$ROOT/base" cg "https://github.com/quickjs-ng/quickjs.git" .
+;; update)
+	"$ROOT/base" ug quickjs
+;; build)
+	"$ROOT/base" bm quickjs
+;; esac
