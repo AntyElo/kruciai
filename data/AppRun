@@ -25,6 +25,7 @@ display_file() {
 	if [ -s "$1" ]
 	then printf "─── %s\n" "$1"
 		cat "$1"
+		printf "\n"
 	else printf "─── %s\n%s\n" "$1" "${_NOTHING}"
 	fi
 }
@@ -44,6 +45,14 @@ display_files() {
 		done
 	fi
 	cd "${_PWD}"
+}
+
+display_files_compressed() {
+	local N="$1"
+	shift
+	display_files "$APPDIR/etc/pkgup/$N" "$@" > "/tmp/kruciai-$N"
+	less -FR "/tmp/kruciai-$N"
+	rm "/tmp/kruciai-$N"
 }
 
 case "$1" in
@@ -73,7 +82,7 @@ mancha          runs chawan$Qs wrapper for manpages}\
 	"$APPDIR/usr/bin/qjs" "$@"
 	;;
 
-	web|elinks) shift
+	w|web|elinks) shift
 	if [ ! -d "$HOME/.config/elinks" ]; then
 		cp -r "$APPDIR/etc/elinks" "$HOME/.config/elinks"
 	fi
@@ -91,12 +100,12 @@ mancha          runs chawan$Qs wrapper for manpages}\
 	fi
 	;;
 
-	c|changes|log) shift
-	display_files "$APPDIR/etc/pkgup/changes" "$@" | less -FRP "Changes"
+	kc|changes|log) shift
+	display_files_compressed changes "$@"
 	;;
 
-	i|installed|list) shift
-	display_files "$APPDIR/etc/pkgup/installed" "$@" | less -FRP "Installed"
+	ki|installed|list) shift
+	display_files_compressed installed "$@"
 	;;
 
 	*) echo "command \"$*\" not recognized" ;;

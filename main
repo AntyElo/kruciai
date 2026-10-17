@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 # base (one shared script file) should be in "$ROOT/base", and it been
 # been sourced in "$ROOT/src/${package_name}.sh" files
-_PWD="$(pwd)"
-ARCHT="${ARCHT:-$(gcc -dumpmachine)}"
-ARCHM="${ARCHM:-$(uname -m)}"
-ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export ARCHT ARCHM ROOT
-cd "$ROOT" || exit
-mkdir -p pool
 
 which >/dev/null 2>/dev/null
 if [ "$?" != '1' ]
@@ -25,6 +18,13 @@ do
 	fi
 done
 
+_PWD="$(pwd)"
+ARCHT="${ARCHT:-$(cc -dumpmachine)}"
+ARCHM="${ARCHM:-$(uname -m)}"
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export ARCHT ARCHM ROOT
+cd "$ROOT" || exit
+mkdir -p pool
 RED="$(tput setaf 1)"
 NORMAL="$(tput sgr0)"
 declare -r RED NORMAL
