@@ -28,7 +28,7 @@ LIBDEPS=(
 MESONFLAGS=(
 	elinks
 	-Dbuildtype\=release
-	#-Dapidoc\=false
+	-Dapidoc\=false
 	-Dxterm\=x-terminal-emulator
 	-Dopenssl\=true
 	-Dterminfo\=true
@@ -79,6 +79,14 @@ init)
 	"$ROOT/base" ug elinks
 ;; build)
 	"$ROOT/base" bm "${MESONFLAGS[@]}"
+	cd "$ROOT/pool/elinks/AppDir/usr/share"
+	mkdir -p mane mane/man1 mane/man5 mane/elinks
+	cp doc/elinks/elinks.1.html mane/man1/elinks.1.html
+	cp doc/elinks/elinkskeys.5.html mane/man5/elinkskeys.5.html
+	cd doc/elinks
+	for F in *.html
+	do cp "$F" "../../mane/elinks/elinks::$F"
+	done
 ;; why-no-build)
 	"$ROOT/base" wnbm elinks
 esac

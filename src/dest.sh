@@ -46,12 +46,12 @@ init)
 	do
 		[ -d "$pagedir" ] || continue
 		subdir=$(basename "$pagedir")
-		mkdir -p "$THIS/AppDir/usr/share/eman/$subdir"
+		mkdir -p "$THIS/AppDir/usr/share/mane/$subdir"
 		for page in "$pagedir"/*
 		do
 			[ -f "$page" ] || continue
 			pagename=$(basename "$page")
-			man -Thtml "$page" > "$THIS/AppDir/usr/share/eman/$subdir/$pagename.html"
+			man -Thtml "$page" > "$THIS/AppDir/usr/share/mane/$subdir/$pagename.html"
 		done
 	done
 	export LD_LIBRARY_PATH="$THIS/AppDir/usr/lib/$ARCHT:$THIS/AppDir/usr/lib:$THIS/AppDir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
