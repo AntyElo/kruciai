@@ -28,7 +28,7 @@ LIBDEPS=(
 MESONFLAGS=(
 	elinks
 	-Dbuildtype\=release
-	-Dapidoc\=false
+	#-Dapidoc\=false
 	-Dxterm\=x-terminal-emulator
 	-Dopenssl\=true
 	-Dterminfo\=true

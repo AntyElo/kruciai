@@ -105,8 +105,7 @@ mancha          runs chawan$Qs wrapper for manpages}
 
 	cha|chawan) shift
 	is_present chawan || exit 127
-	pkgrun "$APPDIR/usr/bin/cha" "$@"
-	fi
+	"$APPDIR/usr/bin/cha" "$@"
 	;;
 
 	man) shift
@@ -119,7 +118,7 @@ mancha          runs chawan$Qs wrapper for manpages}
 
 	mancha) shift
 	is_present chawan || exit 127
-	pkgrun "$APPDIR/usr/bin/mancha" "$@"
+	"$APPDIR/usr/bin/mancha" "$@"
 	;;
 
 	kc|changes|log) shift
