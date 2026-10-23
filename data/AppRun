@@ -15,19 +15,19 @@ _TEXTDOMAINDIR="$TEXTDOMAINDIR"
 export TEXTDOMAINDIR="$APPDIR"/usr/share/locale"${TEXTDOMAINDIR:+:$TEXTDOMAINDIR}"
 
 #export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-$HOME/.local/share:/usr/local/share:/usr/share}"
-if [ -e $APPDIR/etc/pkgup/installed/chawan ]
+if [ -e "$APPDIR/etc/pkgup/installed/chawan" ]
 then HAD_CHAWAN="true"
 fi
 
-_NOTHING="$(tput setaf 7)Nothing$(tput sgr0)"
+_NOTHING="$(tput setaf 7)Nothing$(tput sgr0)$(printf '\n')"
 
 display_file() {
+	printf "─── %s\n" "$1"
 	if [ -s "$1" ]
-	then printf "─── %s\n" "$1"
-		cat "$1"
-		printf "\n"
-	else printf "─── %s\n%s\n" "$1" "${_NOTHING}"
+	then cat "$1"
+	else printf "%s" "$1" "${_NOTHING}"
 	fi
+	printf "\n"
 }
 
 display_files() {
@@ -55,15 +55,27 @@ display_files_compressed() {
 	rm "/tmp/kruciai-$N"
 }
 
+is_present() {
+	for D in "$@"
+	do
+		if [ ! -e "$APPDIR/etc/pkgup/installed/$D"  ]
+		then
+			printf "$D is not installed\n"
+			return 127
+		fi
+	done
+}
+
 case "$1" in
 	''|h|-h|help|--help)
 	Q="'"
-	echo "using: $(basename $0) COMMAND [ ARGS ... ]
+	printf "%s" "using: $(basename $0) COMMAND [ ARGS ... ]
 
 commands:       description:
 
 sh, shell       runs shell. To change dir to appimage root type \`cd \$APPDIR\`
-man             display manpage (wrapper around man${HAD_CHAWAN:+cha})
+man             display manpage (wrapper around system \`man\`)
+man-tree        display available manpages (wrapper around system \`tree\`)
 help            display this help page
 log             list recent changes of programs
 list            list installed programs
@@ -71,7 +83,7 @@ list            list installed programs
 qjs             runs quickjs$Q repl
 elinks          runs elinks web-browser${HAD_CHAWAN:+
 cha, chawan     runs chawan
-mancha          runs chawan$Qs wrapper for manpages}\
+mancha          runs chawan$Qs wrapper for manpages}
 "; unset Q;;
 
 	sh|shell) shift
@@ -79,10 +91,12 @@ mancha          runs chawan$Qs wrapper for manpages}\
 	;;
 
 	qjs) shift
+	is_present quickjs || exit 127
 	"$APPDIR/usr/bin/qjs" "$@"
 	;;
 
 	w|web|elinks) shift
+	is_present elinks || exit 127
 	if [ ! -d "$HOME/.config/elinks" ]; then
 		cp -r "$APPDIR/etc/elinks" "$HOME/.config/elinks"
 	fi
@@ -90,14 +104,22 @@ mancha          runs chawan$Qs wrapper for manpages}\
 	;;
 
 	cha|chawan) shift
-	"$APPDIR/usr/bin/cha" "$@"
+	is_present chawan || exit 127
+	pkgrun "$APPDIR/usr/bin/cha" "$@"
+	fi
 	;;
 
 	man) shift
-	if [ -n "$HAD_CHAWAN" ]
-	then "$APPDIR/usr/bin/mancha" "$@"
-	else man "$@"
-	fi
+	man -H"$APPDIR/usr/bin/elinks" "$@"
+	;;
+
+	man-tree)
+	tree "$APPDIR/usr/share/man"
+	;;
+
+	mancha) shift
+	is_present chawan || exit 127
+	pkgrun "$APPDIR/usr/bin/mancha" "$@"
 	;;
 
 	kc|changes|log) shift

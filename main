@@ -9,7 +9,7 @@ then
 	exit 66
 fi
 
-for i in echo tput pkg-config cc
+for i in echo tput pkg-config cc c++
 do
 	if [ -n "$i" ] && [ -z "$(which "$i")" ]
 	then
