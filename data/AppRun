@@ -60,7 +60,7 @@ is_present() {
 	do
 		if [ ! -e "$APPDIR/etc/pkgup/installed/$D"  ]
 		then
-			printf "$D is not installed\n"
+			printf '%s is not installed\n' "$D"
 			return 127
 		fi
 	done
@@ -74,8 +74,8 @@ case "$1" in
 commands:       description:
 
 sh, shell       runs shell. To change dir to appimage root type \`cd \$APPDIR\`
-man             display manpage (wrapper around system \`man\`)
-man-tree        display available manpages (wrapper around system \`tree\`)
+eman            display manpage
+eman-tree       display available manpages (wrapper around system \`tree\`)
 help            display this help page
 log             list recent changes of programs
 list            list installed programs
@@ -108,8 +108,28 @@ mancha          runs chawan$Qs wrapper for manpages}
 	"$APPDIR/usr/bin/cha" "$@"
 	;;
 
+	eman) shift
+	is_present elinks || exit 127
+	declare not_found
+	for N in "$@"
+	do  for F in "$APPDIR/usr/share/eman"/*/"$N".*.html
+		do if [ -f "$F" ]
+			then "$APPDIR/usr/bin/elinks" "$F"
+			else printf 'manpage "%s" not found\n' "$N"
+				not_found=1
+			fi
+		done
+	done
+	test -n "$not_found" && printf '\ntip: use kruciai eman-tree to list manpages\n'
+	unset not_found
+	;;
+
 	man) shift
 	man -H"$APPDIR/usr/bin/elinks" "$@"
+	;;
+
+	eman-tree)
+	tree "$APPDIR/usr/share/eman"
 	;;
 
 	man-tree)

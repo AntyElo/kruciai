@@ -6,6 +6,7 @@ DEPS=(
 SYSDEPS=(
 	git
 	wget
+	man
 )
 LIBDEPS=(
 )
@@ -41,6 +42,18 @@ init)
 ;; build)
 	mkdir -p "$THIS/AppDir/etc"
 	cp -RT "$ROOT/data/etc" "$THIS/AppDir/etc"
+	for pagedir in "$THIS/AppDir/usr/share/man"/man*
+	do
+		[ -d "$pagedir" ] || continue
+		subdir=$(basename "$pagedir")
+		mkdir -p "$THIS/AppDir/usr/share/eman/$subdir"
+		for page in "$pagedir"/*
+		do
+			[ -f "$page" ] || continue
+			pagename=$(basename "$page")
+			man -Thtml "$page" > "$THIS/AppDir/usr/share/eman/$subdir/$pagename.html"
+		done
+	done
 	export LD_LIBRARY_PATH="$THIS/AppDir/usr/lib/$ARCHT:$THIS/AppDir/usr/lib:$THIS/AppDir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 	1>>"$ROOT/log/1" 2>>"$ROOT/log/2"\
 		"$THIS/src/linuxdeploy-$ARCHM.AppImage" "${ALD_FLAGS[@]}" || exit 1
