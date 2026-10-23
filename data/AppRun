@@ -80,7 +80,7 @@ help            display this help page
 log             list recent changes of programs
 list            list installed programs
 
-qjs             runs quickjs$Q repl
+qjs[c]          runs quickjs$Q repl or compiler
 elinks          runs elinks web-browser${HAD_CHAWAN:+
 cha, chawan     runs chawan
 mancha          runs chawan$Qs wrapper for manpages}
@@ -90,9 +90,10 @@ mancha          runs chawan$Qs wrapper for manpages}
 	${SHELL:=bash} "$@"
 	;;
 
-	qjs) shift
+	qjs|qjsc) NAME=$1; shift
 	is_present quickjs || exit 127
-	"$APPDIR/usr/bin/qjs" "$@"
+	"$APPDIR/usr/bin/$NAME" "$@"
+	unset "$NAME"
 	;;
 
 	w|web|elinks) shift
